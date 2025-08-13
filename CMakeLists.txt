@@ -6,15 +6,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(CLI_Utilites src/main.cpp
-        src/battery.cpp
-        include/battery.h
-        src/cleaner.cpp
-        include/cleaner.h
-        src/wifi.cpp
-        include/wifi.h
-        src/devices.cpp
-        include/devices.h)
-add_executable(TEST src/main.cpp)
+        src/BatteryMonitor.cpp
+        src/Cleaner.cpp
+        src/WifiMonitor.cpp
+        src/DeviceWatcher.cpp
+        include/BatteryMonitor.h
+        include/Cleaner.h
+        include/DeviceWatcher.h
+        include/WifiMonitor.h
+        include/Colors.h
+)
 
-target_compile_options(CLI_Utilites PRIVATE -Wextra -Werror -fsanitize=address)
-target_link_options(CLI_Utilites PRIVATE -fsanitize=address)
+target_compile_options(CLI_Utilites PRIVATE -Wextra -Werror)
+target_include_directories(CLI_Utilites PRIVATE interface)
+target_include_directories(CLI_Utilites PRIVATE include)
+target_link_libraries(CLI_Utilites
+        "-framework IOKit"
+        "-framework CoreFoundation"
+)

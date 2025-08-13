@@ -2,4 +2,4 @@
 // Created by Marat on 13.08.25.
 //
 
-#include "../include/wifi.h"
+#pragma once
