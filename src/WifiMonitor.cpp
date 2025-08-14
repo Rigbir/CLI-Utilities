@@ -3,8 +3,3 @@
 //
 
 #include <iostream>
-#include "IWifiMonitor.h"
-
-class WifiMonitor: public IWifiMonitor {
-
-};

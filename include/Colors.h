@@ -26,4 +26,6 @@
 #define BCyan    "\033[1;36m"    // Cyan
 #define BWhite   "\033[1;37m"    // White
 
-
+inline std::string colorText(const std::string& color, const std::string& text, const std::string& reset = C_RESET) {
+    return color + text + reset;
+}

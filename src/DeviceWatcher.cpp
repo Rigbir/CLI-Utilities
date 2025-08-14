@@ -4,7 +4,3 @@
 
 #include <iostream>
 #include "IDeviceWatcher.h"
-
-class DeviceWatcher: public IDeviceWatcher {
-
-};

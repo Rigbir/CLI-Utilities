@@ -12,9 +12,10 @@
 int main(int argc, const char* argv[]) {
     std::map<std::string, std::unique_ptr<Command>> commands;
     commands["battery"] = std::make_unique<BatteryMonitor>();
+    commands["cleaner"] = std::make_unique<Cleaner>();
 
     if (argc < 2) {
-        std::cerr << BRed << "\nUsage: mytool <command>\n" << C_RESET;
+        std::cerr << colorText(BRed, "\nUsage: mytool <command>\n");
         return 1;
     }
 
@@ -23,7 +24,7 @@ int main(int argc, const char* argv[]) {
         const std::vector<std::string> args(argv + 2, argv + argc);
         it->second->execute(args);
     } else {
-        std::cerr << BRed << "\nUnknown command: " << cmd << '\n' << C_RESET;
+        std::cerr << colorText(BRed, "\nUnknown command: " + cmd) << '\n';
         return 1;
     }
 

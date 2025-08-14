@@ -5,6 +5,6 @@
 #pragma once
 #include "Command.h"
 
-class IDeviceWatcher: Command {
+class IDeviceWatcher : Command {
 
 };

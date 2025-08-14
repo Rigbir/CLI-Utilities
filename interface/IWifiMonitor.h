@@ -5,6 +5,6 @@
 #pragma once
 #include "Command.h"
 
-class IWifiMonitor: Command {
+class IWifiMonitor : Command {
 
 };

@@ -6,42 +6,35 @@
 #include <IOKit/IOKitLib.h>
 #include <IOKit/ps/IOPowerSources.h>
 #include <IOKit/ps/IOPSKeys.h>
+#include <iostream>
 #include <thread>
 #include <chrono>
 
-std::string colorText(const std::string& color, const std::string& text, const std::string& reset = C_RESET) {
-    return color + text + reset;
-}
-
 void BatteryMonitor::execute(const std::vector<std::string>& args) {
-    (void)args;
+    (void) args;
 
-    auto [color, bar] = animatedBattery(getCapacity());
-    std::cout << colorText(BWhite, "\nBattery: ")
-              << colorText(C_White, std::to_string(getCapacity()) + "% [" + color + bar + "] ")
-              << (isCharging() ? colorText(BGreen, "(charging)") : colorText(BRed, "(discharging)")) << '\n';
-
-    std::cout << colorText(BPurple, "Cycle Count: ")
-              << colorText(C_Purple, std::to_string(getCycleCount())) << '\n';
-
-    std::cout << colorText(BCyan, "Health: ")
-              << colorText(C_Cyan, std::to_string(getHealth()) + '%') << '\n';
-
-
-    const int time = getTimeRemaining();
-    std::cout << colorText(BBlue, "Time remaining: ");
-    std::cout << colorText(C_Blue, (time > 0 ? std::to_string(time) + " minutes" : "calculating...")) << '\n';
-
-    /*
     while (true) {
         auto [color, bar] = animatedBattery(getCapacity());
 
-        std::cout << "\rBattery: " << getCapacity() << "% ["<< color << bar << C_RESET << "] ";
-        std::cout << (isCharging() ? " (charging)" : " (discharging)");
+        std::system("clear");
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::cout << colorText(BWhite, "\nBattery: ")
+                    << colorText(C_White, std::to_string(getCapacity()) + "% [" + color + bar + "] ")
+                    << (isCharging() ? colorText(BGreen, "(charging)") : colorText(BRed, "(discharging)")) << '\n';
+
+        std::cout << colorText(BPurple, "Cycle Count: ")
+                  << colorText(C_Purple, std::to_string(getCycleCount())) << '\n';
+
+        std::cout << colorText(BCyan, "Health: ")
+                  << colorText(C_Cyan, std::to_string(getHealth()) + '%') << '\n';
+
+
+        const int time = getTimeRemaining();
+        std::cout << colorText(BBlue, "Time remaining: ");
+        std::cout << colorText(C_Blue, (time > 0 ? std::to_string(time) + " minutes" : "calculating...")) << '\n';
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
-    */
 }
 
 int BatteryMonitor::getIntValue(CFStringRef key) {
@@ -125,24 +118,26 @@ std::pair<std::string, std::string> BatteryMonitor::animatedBattery(int batteryP
     static int animationStep = 0;
 
     std::string color;
-    if (batteryPercent > 80) color = C_GREEN;
-    else if (batteryPercent >= 40) color = C_YELLOW;
-    else color = C_RED;
+    if (batteryPercent > 80) color = BGreen;
+    else if (batteryPercent >= 40) color = BYellow;
+    else color = BRed;
 
     int filled = batteryPercent * width / 100;
     int empty = width - filled;
 
-    std::string bar;
-    for (int i = 0; i < filled; ++i) {
-        bar += "█";
-    }
-    bar += std::string(empty, '-');
+    std::vector<std::string> bar(filled, "█");
+    bar.insert(bar.end(), empty, "-");
 
     if (isCharging() && filled > 0) {
         const int animPos = animationStep % filled;
-        bar.replace(animPos, 1, "▓");
+        bar[animPos] = "░";
         ++animationStep;
     }
 
-    return {color, bar};
+    std::string barStr;
+    for (const auto& c : bar) {
+        barStr += c;
+    }
+
+    return {color, barStr};
 }

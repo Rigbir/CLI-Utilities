@@ -6,7 +6,7 @@
 #include "Command.h"
 #include <CoreFoundation/CoreFoundation.h>
 
-class IBatteryMonitor: public Command {
+class IBatteryMonitor : public Command {
 public:
     virtual bool isCharging() const = 0;
     virtual int getRegistryIntValue(CFStringRef key) const = 0;
