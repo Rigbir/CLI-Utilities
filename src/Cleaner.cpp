@@ -21,7 +21,7 @@ std::string Cleaner::lower(std::string& word) {
 
 std::string Cleaner::getFolder() {
     std::string inputFolder;
-    std::cout << colorText(BWhite, "\nWrite Folder: [cache, xCode, safari] ");
+    std::cout << colorText(BWhite, "\nWrite Folder [cache, xCode, safari]: ");
     std::getline(std::cin, inputFolder);
 
     return lower(inputFolder);
@@ -39,7 +39,7 @@ std::string Cleaner::resolveFolderPath(const std::string& key) {
     return "";
 }
 
-void Cleaner::printFileInFolder(const std::string& folder) {
+void Cleaner::printFileInFolder(const std::string& folder) const {
     DIR* dir = opendir(folder.c_str());
     std::cout << colorText(BRed, "\nDirectory: " + folder) << "\n\n" << std::string(70, '-') << '\n';
 
@@ -93,7 +93,7 @@ void Cleaner::execute(const std::vector<std::string>& args) {
 
     char del;
     while (true) {
-        std::cout << colorText(BWhite, "Are you want delete dir/path? [y/n]: ");
+        std::cout << colorText(BWhite, "\nAre you want delete dir/file? [y/n]: ");
         std::cin >> del;
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -200,7 +200,7 @@ void Cleaner::removeFile(const std::string& folder) {
             std::cout << colorText(BRed, "No match found!\n");
             continue;
         } else if (matches.size() == 1) {
-            std::cout << colorText(BWhite, "Find file: " + matches[0]) << '\n';
+            std::cout << colorText(BWhite, "\nFind file: " + matches[0]) << '\n';
             if (confirmation()) {
 
                 std::filesystem::is_directory(workFolder)
@@ -208,14 +208,14 @@ void Cleaner::removeFile(const std::string& folder) {
                 : std::filesystem::remove((workFolder + matches[0]).c_str());
 
                 allEntries.erase(matches[0]);
-                std::cout << colorText(BYellow, "File was deleted.\n");
+                std::cout << colorText(BYellow, "\nFile was deleted.\n");
             }
             break;
         } else {
-            std::cout << colorText(BWhite, "Multiple matches found:\n");
+            std::cout << colorText(BWhite, "\nMultiple matches found:\n");
             for (const auto& file : matches) {
                 std::cout << colorText(BCyan, file) << '\n';
             }
-            std::cout << colorText(BWhite, "Please enter more specific name.\n");        }
+            std::cout << colorText(BWhite, "\nPlease enter more specific name.\n");        }
     }
 }

@@ -18,5 +18,5 @@ private:
     static std::string getFolder();
     static std::string resolveFolderPath(const std::string& key);
     static std::string lower(std::string& word);
-    void printFileInFolder(const std::string& folder);
+    void printFileInFolder(const std::string& folder) const;
 };
