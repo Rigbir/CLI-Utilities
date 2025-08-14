@@ -14,5 +14,9 @@ public:
     void removeFile(const std::string& folder) override;
 
 private:
-    std::map<std::string, std::string> entries;
+    std::map<std::string, std::string> allEntries;
+    static std::string getFolder();
+    static std::string resolveFolderPath(const std::string& key);
+    static std::string lower(std::string& word);
+    void printFileInFolder(const std::string& folder);
 };
