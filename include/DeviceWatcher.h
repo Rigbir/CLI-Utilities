@@ -7,6 +7,8 @@
 #include <set>
 #include <IOKit/IOKitLib.h>
 #include <CoreAudio/CoreAudio.h>
+#include <CoreGraphics/CoreGraphics.h>
+
 
 class DeviceWatcher final : public IDeviceWatcher {
 public:
@@ -20,7 +22,9 @@ private:
     static void usbDeviceAdded(void* refCon, io_iterator_t iterator);
     static void usbDeviceRemoved(void* refCon, io_iterator_t iterator);
 
-
     static std::string audioDeviceName(AudioObjectID device);
     static OSStatus audioDevicesChanged(AudioObjectID, UInt32, const AudioObjectPropertyAddress*, void*);
+
+    static std::string displayDeviceName(CGDirectDisplayID displayID);
+    static void displayDeviceChanged(CGDirectDisplayID displayID, CGDisplayChangeSummaryFlags flags, void*);
 };

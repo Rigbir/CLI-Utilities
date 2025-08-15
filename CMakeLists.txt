@@ -20,4 +20,5 @@ target_link_libraries(CLI_Utilites
         "-framework IOKit"
         "-framework CoreFoundation"
         "-framework CoreAudio"
+        "-framework CoreGraphics"
 )

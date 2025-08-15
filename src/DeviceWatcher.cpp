@@ -3,12 +3,13 @@
 //
 
 #include "DeviceWatcher.h"
-#include <iostream>
+#include <map>
 #include <iomanip>
 #include <sstream>
-#include <map>
+#include <iostream>
 #include <IOKit/usb/IOUSBLib.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <IOKit/graphics/IOGraphicsLib.h>
 
 std::string currentTime() {
     const auto now = std::chrono::system_clock::now();
@@ -97,11 +98,11 @@ OSStatus DeviceWatcher::audioDevicesChanged(AudioObjectID, UInt32, const AudioOb
     std::set<AudioObjectID> newSet(devices.begin(), devices.end());
 
     std::set<std::string> printedNames;
-    for (auto dev : newSet) {
-        if (currentAudioDevices.find(dev) == currentAudioDevices.end()) {
+    for (const auto& dev : newSet) {
+        if (!currentAudioDevices.contains(dev)) {
             std::string name = audioDeviceName(dev);
             if (name != "Unknown Audio Device") {
-                if (!printedNames.count(name)) {
+                if (!printedNames.contains(name)) {
                     currentAudioDevices[dev] = name;
                     std::cout << colorText(BWhite, currentTime() + " [+] Audio device: " + name + " connected\n");
                     std::cout << colorText(BWhite, std::string(80, '-'));
@@ -112,7 +113,7 @@ OSStatus DeviceWatcher::audioDevicesChanged(AudioObjectID, UInt32, const AudioOb
     }
 
     for (auto it = currentAudioDevices.begin(); it != currentAudioDevices.end(); ) {
-        if (newSet.find(it->first) == newSet.end()) {
+        if (!newSet.contains(it->first)) {
             std::cout << colorText(BWhite, currentTime() + " [-] Audio device: " + it->second + " disconnected\n");
             std::cout << colorText(BWhite, std::string(80, '-'));
             it = currentAudioDevices.erase(it);
@@ -124,12 +125,58 @@ OSStatus DeviceWatcher::audioDevicesChanged(AudioObjectID, UInt32, const AudioOb
     return noErr;
 }
 
+std::map<CGDirectDisplayID, std::string> currentDisplays;
+std::string DeviceWatcher::displayDeviceName(CGDirectDisplayID displayID) {
+    CGDisplayModeRef mode = CGDisplayCopyDisplayMode(displayID);
+    if (!mode) return "Unknown Display";
+
+    const size_t width  = CGDisplayModeGetWidth(mode);
+    const size_t height = CGDisplayModeGetHeight(mode);
+    const double refreshRate = CGDisplayModeGetRefreshRate(mode);
+
+    CFRelease(mode);
+
+    std::ostringstream oss;
+    oss << colorText(BWhite, std::to_string(width) + "x" + std::to_string(height));
+    if (refreshRate > 0)
+        oss << colorText(BWhite, " " + std::to_string(static_cast<int>(refreshRate)) + "Hz");
+
+    return oss.str();
+}
+
+void DeviceWatcher::displayDeviceChanged(CGDirectDisplayID displayID, CGDisplayChangeSummaryFlags flags, void*) {
+    if (flags & kCGDisplayAddFlag) {
+        std::string name = displayDeviceName(displayID);
+        currentDisplays[displayID] = name;
+        std::cout << colorText(BWhite, currentTime() + " [+] Display connected: " + name + "\n");
+        std::cout << colorText(BWhite, std::string(80, '-'));
+    }
+
+    if (flags & kCGDisplayRemoveFlag) {
+        auto it = currentDisplays.find(displayID);
+        if (it != currentDisplays.end()) {
+            std::cout << colorText(BWhite, currentTime() + " [-] Display disconnected: " + it->second + "\n");
+            std::cout << colorText(BWhite, std::string(80, '-'));
+            currentDisplays.erase(it);
+        }
+    }
+}
+
 void DeviceWatcher::execute(const std::vector<std::string> &args) {
     (void) args;
 
-    //usbRun();
-    audioRun();
-    //displayRun();
+    while (true) {
+        std::cout << colorText(BWhite, "\nChoose one [1, 2, 3]: ");
+        int inputChoose;
+        std::cin >> inputChoose;
+
+        switch (inputChoose) {
+            case 1: usbRun(); return;
+            case 2: audioRun(); return;
+            case 3: displayRun(); return;
+            default: std::cout << colorText(BRed, "\nWrong input!\n"); break;
+        }
+    }
 }
 
 void DeviceWatcher::usbRun() const {
@@ -182,7 +229,22 @@ void DeviceWatcher::audioRun() const {
 }
 
 void DeviceWatcher::displayRun() const {
-    return;
+    CGDirectDisplayID displays[32];
+    uint32_t displayCount = 0;
+    CGGetOnlineDisplayList(32, displays, &displayCount);
+
+    for (uint32_t i = 0; i < displayCount; ++i) {
+        CGDirectDisplayID id = displays[i];
+        if (!currentDisplays.contains(id)) {
+            std::string name = displayDeviceName(id);
+            currentDisplays[id] = name;
+            std::cout << colorText(BWhite, currentTime() + " [+] Display connected: " + name + "\n");
+            std::cout << colorText(BWhite, std::string(80, '-'));
+        }
+    }
+
+    std::cout << colorText(BWhite, "\n[*] Waiting for Display events...\n");
+    CGDisplayRegisterReconfigurationCallback(displayDeviceChanged, nullptr);
+
+    CFRunLoopRun();
 }
-
-
