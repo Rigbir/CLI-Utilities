@@ -19,7 +19,7 @@ std::string currentTime() {
     return ss.str();
 }
 
-std::string DeviceWatcher::usbDeviceName(io_object_t device) {
+std::string DeviceWatcher::usbDeviceName(const io_object_t device) {
     std::string result;
     const auto productName = static_cast<CFStringRef>(IORegistryEntryCreateCFProperty(
         device,
@@ -37,7 +37,7 @@ std::string DeviceWatcher::usbDeviceName(io_object_t device) {
     return result;
 }
 
-void DeviceWatcher::usbDeviceAdded(void *, io_iterator_t iterator) {
+void DeviceWatcher::usbDeviceAdded(void *, const io_iterator_t iterator) {
     io_object_t usbDevice;
     while ((usbDevice = IOIteratorNext(iterator))) {
         std::string name = usbDeviceName(usbDevice);
@@ -48,7 +48,7 @@ void DeviceWatcher::usbDeviceAdded(void *, io_iterator_t iterator) {
     }
 }
 
-void DeviceWatcher::usbDeviceRemoved(void *, io_iterator_t iterator) {
+void DeviceWatcher::usbDeviceRemoved(void *, const io_iterator_t iterator) {
     io_object_t usbDevice;
     while ((usbDevice = IOIteratorNext(iterator))) {
         std::string name = usbDeviceName(usbDevice);
@@ -59,7 +59,7 @@ void DeviceWatcher::usbDeviceRemoved(void *, io_iterator_t iterator) {
     }
 }
 
-std::string DeviceWatcher::audioDeviceName(AudioObjectID device) {
+std::string DeviceWatcher::audioDeviceName(const AudioObjectID device) {
     std::string result;
     CFStringRef nameRef = nullptr;
     UInt32 size = sizeof(nameRef);
@@ -126,8 +126,8 @@ OSStatus DeviceWatcher::audioDevicesChanged(AudioObjectID, UInt32, const AudioOb
 }
 
 std::map<CGDirectDisplayID, std::string> currentDisplays;
-std::string DeviceWatcher::displayDeviceName(CGDirectDisplayID displayID) {
-    CGDisplayModeRef mode = CGDisplayCopyDisplayMode(displayID);
+std::string DeviceWatcher::displayDeviceName(const CGDirectDisplayID displayID) {
+    const CGDisplayModeRef mode = CGDisplayCopyDisplayMode(displayID);
     if (!mode) return "Unknown Display";
 
     const size_t width  = CGDisplayModeGetWidth(mode);
@@ -144,9 +144,9 @@ std::string DeviceWatcher::displayDeviceName(CGDirectDisplayID displayID) {
     return oss.str();
 }
 
-void DeviceWatcher::displayDeviceChanged(CGDirectDisplayID displayID, CGDisplayChangeSummaryFlags flags, void*) {
+void DeviceWatcher::displayDeviceChanged(const CGDirectDisplayID displayID, const CGDisplayChangeSummaryFlags flags, void*) {
     if (flags & kCGDisplayAddFlag) {
-        std::string name = displayDeviceName(displayID);
+        const std::string name = displayDeviceName(displayID);
         currentDisplays[displayID] = name;
         std::cout << colorText(BWhite, currentTime() + " [+] Display connected: " + name + "\n");
         std::cout << colorText(BWhite, std::string(80, '-'));

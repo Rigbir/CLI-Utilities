@@ -26,5 +26,5 @@ private:
     static OSStatus audioDevicesChanged(AudioObjectID, UInt32, const AudioObjectPropertyAddress*, void*);
 
     static std::string displayDeviceName(CGDirectDisplayID displayID);
-    static void displayDeviceChanged(CGDirectDisplayID displayID, CGDisplayChangeSummaryFlags flags, void*);
+    static void displayDeviceChanged(const CGDirectDisplayID displayID, const CGDisplayChangeSummaryFlags flags, void*);
 };
