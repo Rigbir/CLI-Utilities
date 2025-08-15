@@ -13,6 +13,7 @@ int main(int argc, const char* argv[]) {
     std::map<std::string, std::unique_ptr<Command>> commands;
     commands["battery"] = std::make_unique<BatteryMonitor>();
     commands["cleaner"] = std::make_unique<Cleaner>();
+    commands["wifi"] = std::make_unique<WifiMonitor>();
 
     if (argc < 2) {
         std::cerr << colorText(BRed, "\nUsage: mytool <command>\n");

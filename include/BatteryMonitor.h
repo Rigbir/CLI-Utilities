@@ -17,5 +17,5 @@ public:
     [[nodiscard]] std::pair<std::string, std::string> animatedBattery(int batteryPercent) const;
 
 private:
-    [[nodiscard]] static int getIntValue(CFStringRef key);
+    [[nodiscard]] static int getIntValue(const CFStringRef key);
 };

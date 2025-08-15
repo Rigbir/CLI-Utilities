@@ -5,6 +5,9 @@
 #pragma once
 #include "Command.h"
 
-class IWifiMonitor : Command {
-
+class IWifiMonitor : public Command {
+public:
+    virtual void showCurrentConnections() const = 0;
+    virtual void listConnections() const = 0;
+    virtual void monitorConnections() const = 0;
 };

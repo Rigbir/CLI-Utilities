@@ -37,13 +37,13 @@ void BatteryMonitor::execute(const std::vector<std::string>& args) {
     }
 }
 
-int BatteryMonitor::getIntValue(CFStringRef key) {
-    CFTypeRef blob = IOPSCopyPowerSourcesInfo();
-    CFArrayRef sources = IOPSCopyPowerSourcesList(blob);
+int BatteryMonitor::getIntValue(const CFStringRef key) {
+    const CFTypeRef blob = IOPSCopyPowerSourcesInfo();
+    const CFArrayRef sources = IOPSCopyPowerSourcesList(blob);
 
     int value = -1;
     if (CFArrayGetCount(sources) > 0) {
-        CFDictionaryRef desc = IOPSGetPowerSourceDescription(
+        const CFDictionaryRef desc = IOPSGetPowerSourceDescription(
             blob,
             CFArrayGetValueAtIndex(sources, 0)
         );
@@ -58,12 +58,12 @@ int BatteryMonitor::getIntValue(CFStringRef key) {
 }
 
 bool BatteryMonitor::isCharging() const {
-    CFTypeRef blob = IOPSCopyPowerSourcesInfo();
-    CFArrayRef sources = IOPSCopyPowerSourcesList(blob);
+    const CFTypeRef blob = IOPSCopyPowerSourcesInfo();
+    const CFArrayRef sources = IOPSCopyPowerSourcesList(blob);
 
     bool value = false;
     if (CFArrayGetCount(sources) > 0) {
-        CFDictionaryRef desc = IOPSGetPowerSourceDescription(
+        const CFDictionaryRef desc = IOPSGetPowerSourceDescription(
             blob,
             CFArrayGetValueAtIndex(sources, 0)
         );
@@ -77,12 +77,12 @@ bool BatteryMonitor::isCharging() const {
 }
 
 int BatteryMonitor::getRegistryIntValue(CFStringRef key) const {
-    io_service_t battery = IOServiceGetMatchingService(
+    const io_service_t battery = IOServiceGetMatchingService(
                                 kIOMainPortDefault,
                                 IOServiceMatching("AppleSmartBattery"));
     if (!battery) return -1;
 
-    CFTypeRef val = IORegistryEntryCreateCFProperty(battery, key, kCFAllocatorDefault, 0);
+    const CFTypeRef val = IORegistryEntryCreateCFProperty(battery, key, kCFAllocatorDefault, 0);
     IOObjectRelease(battery);
 
     int result = -1;
@@ -103,13 +103,13 @@ int BatteryMonitor::getCycleCount() const {
 }
 
 double BatteryMonitor::getHealth() const {
-    int designCap = getRegistryIntValue(CFSTR("DesignCapacity"));
-    int nominalCap = getRegistryIntValue(CFSTR("NominalChargeCapacity"));
+    const int designCap = getRegistryIntValue(CFSTR("DesignCapacity"));
+    const int nominalCap = getRegistryIntValue(CFSTR("NominalChargeCapacity"));
     return (designCap > 0) ? (static_cast<double>(nominalCap) / designCap) * 100 : -1;
 }
 
 int BatteryMonitor::getTimeRemaining() const {
-    CFStringRef key = isCharging() ? CFSTR(kIOPSTimeToFullChargeKey) : CFSTR(kIOPSTimeToEmptyKey);
+    const CFStringRef key = isCharging() ? CFSTR(kIOPSTimeToFullChargeKey) : CFSTR(kIOPSTimeToEmptyKey);
     return getIntValue(key);
 }
 
@@ -122,8 +122,8 @@ std::pair<std::string, std::string> BatteryMonitor::animatedBattery(int batteryP
     else if (batteryPercent >= 40) color = BYellow;
     else color = BRed;
 
-    int filled = batteryPercent * width / 100;
-    int empty = width - filled;
+    const int filled = batteryPercent * width / 100;
+    const int empty = width - filled;
 
     std::vector<std::string> bar(filled, "█");
     bar.insert(bar.end(), empty, "-");

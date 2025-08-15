@@ -15,7 +15,7 @@
 
 std::string Cleaner::lower(std::string& word) {
     std::ranges::transform(word.begin(), word.end(), word.begin(),
-                       [](unsigned char c){ return std::tolower(c); });
+                       [](const unsigned char c){ return std::tolower(c); });
     return word;
 }
 
@@ -172,7 +172,7 @@ std::string Cleaner::getStats(const std::string& path) const {
 }
 
 void Cleaner::removeFile(const std::string& folder) {
-    std::string workFolder = resolveFolderPath(folder);
+    const std::string workFolder = resolveFolderPath(folder);
     if (workFolder.empty()) {
         std::cerr << colorText(BRed, "Unknown folder key: " + folder) << '\n';
         return;
