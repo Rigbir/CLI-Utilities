@@ -14,6 +14,7 @@ int main(int argc, const char* argv[]) {
     commands["battery"] = std::make_unique<BatteryMonitor>();
     commands["cleaner"] = std::make_unique<Cleaner>();
     commands["wifi"] = std::make_unique<WifiMonitor>();
+    commands["device"] = std::make_unique<DeviceWatcher>();
 
     if (argc < 2) {
         std::cerr << colorText(BRed, "\nUsage: mytool <command>\n");

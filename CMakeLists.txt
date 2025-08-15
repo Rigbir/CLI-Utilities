@@ -19,4 +19,5 @@ target_link_libraries(CLI_Utilites
         PRIVATE
         "-framework IOKit"
         "-framework CoreFoundation"
+        "-framework CoreAudio"
 )

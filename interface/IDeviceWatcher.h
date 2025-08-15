@@ -5,6 +5,9 @@
 #pragma once
 #include "Command.h"
 
-class IDeviceWatcher : Command {
-
+class IDeviceWatcher : public Command {
+public:
+    virtual void usbRun() const = 0;
+    virtual void audioRun() const = 0;
+    virtual void displayRun() const = 0;
 };
