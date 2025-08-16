@@ -1,21 +1,21 @@
 cmake_minimum_required(VERSION 3.31)
-project(CLI_Utilites)
+project(cliutils)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(CLI_Utilites src/main.cpp
+add_executable(cliutils src/main.cpp
         src/BatteryMonitor.cpp
         src/Cleaner.cpp
         src/WifiMonitor.cpp
         src/DeviceWatcher.cpp
 )
 
-target_compile_options(CLI_Utilites PRIVATE -Wextra -Werror)
-target_include_directories(CLI_Utilites PRIVATE interface)
-target_include_directories(CLI_Utilites PRIVATE include/monitors include/utils)
-target_link_libraries(CLI_Utilites
+target_compile_options(cliutils PRIVATE -Wextra -Werror)
+target_include_directories(cliutils PRIVATE interface)
+target_include_directories(cliutils PRIVATE include/monitors include/utils)
+target_link_libraries(cliutils
         PRIVATE
         "-framework IOKit"
         "-framework CoreFoundation"
