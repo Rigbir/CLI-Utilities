@@ -10,12 +10,11 @@ add_executable(CLI_Utilites src/main.cpp
         src/Cleaner.cpp
         src/WifiMonitor.cpp
         src/DeviceWatcher.cpp
-        include/PrintUtilites.h
 )
 
 target_compile_options(CLI_Utilites PRIVATE -Wextra -Werror)
 target_include_directories(CLI_Utilites PRIVATE interface)
-target_include_directories(CLI_Utilites PRIVATE include)
+target_include_directories(CLI_Utilites PRIVATE include/monitors include/utils)
 target_link_libraries(CLI_Utilites
         PRIVATE
         "-framework IOKit"
