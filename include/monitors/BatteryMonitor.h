@@ -17,7 +17,7 @@ public:
 
     [[nodiscard]] std::pair<std::string, std::string> animatedBattery(const int batteryPercent) const;
     [[nodiscard]] std::pair<std::string, std::string> animatedCycleCount(const int cycleCount) const;
-    [[nodiscard]] std::pair<std::string, std::string> animatedHealth(const int healthPercent) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedHealth(const double healthPercent) const;
     [[nodiscard]] std::pair<std::string, std::string> animatedTime(const int time) const;
     [[nodiscard]] std::pair<std::string, std::string> staticAnimation(const int value) const;
 

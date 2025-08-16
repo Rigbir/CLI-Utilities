@@ -251,7 +251,7 @@ std::pair<std::string, std::string> BatteryMonitor::animatedCycleCount(const int
     return {color, barStr};
 }
 
-std::pair<std::string, std::string> BatteryMonitor::animatedHealth(const int healthPercent) const {
+std::pair<std::string, std::string> BatteryMonitor::animatedHealth(const double healthPercent) const {
     constexpr int width = 20;
     static int animationStep = 0;
 
@@ -260,7 +260,7 @@ std::pair<std::string, std::string> BatteryMonitor::animatedHealth(const int hea
     else if (healthPercent >= 40) color = BYellow;
     else color = BRed;
 
-    const int filled = healthPercent * width / 100;
+    const int filled = static_cast<int>(healthPercent) * width / 100;
     const int empty = width - filled;
 
     std::vector<std::string> bar(filled, "█");
@@ -323,7 +323,7 @@ std::pair<std::string, std::string> BatteryMonitor::staticAnimation(const int va
         percent = 100 - (getCycleCount() / 10);
     }
     else if (value == static_cast<int>(getHealth())) {
-        percent = getHealth();
+        percent = static_cast<int>(getHealth());
     }
     else if (value == getTimeRemaining()) {
         percent = isCharging() ? getTimeRemaining() * 100 / 120 : getTimeRemaining() * 100 / 500;
