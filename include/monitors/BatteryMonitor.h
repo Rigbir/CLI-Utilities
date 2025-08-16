@@ -7,7 +7,7 @@
 
 class BatteryMonitor final : public IBatteryMonitor {
 public:
-    [[noreturn]] void execute(const std::vector<std::string>& args) override;
+    void execute(const std::vector<std::string>& args) override;
     [[nodiscard]] bool isCharging() const override;
     [[nodiscard]] int getRegistryIntValue(CFStringRef key) const override;
     [[nodiscard]] int getCapacity() const override;
@@ -18,4 +18,8 @@ public:
 
 private:
     [[nodiscard]] static int getIntValue(const CFStringRef key);
+    void runLiveMonitor() const;
+    void printStatus(const bool animated) const;
+    void animatedStatus() const;
+    void staticStatus() const;
 };

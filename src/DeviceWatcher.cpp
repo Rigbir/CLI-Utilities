@@ -226,7 +226,7 @@ void DeviceWatcher::execute(const std::vector<std::string> &args) {
             case 1: usbRun(); break;
             case 2: audioRun(); break;
             case 3: displayRun(); break;
-            default: std::cout << colorText(BRed, "\nWrong input!\n"); continue;
+            default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
         }
     }
 }

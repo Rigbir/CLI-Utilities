@@ -146,7 +146,7 @@ void WifiMonitor::execute(const std::vector<std::string>& args) {
             case 1: showCurrentConnections(); break;
             case 2: listConnections(); break;
             case 3: monitorConnections(); break;
-            default: std::cout << colorText(BRed, "\nWrong input!\n"); continue;
+            default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
         }
     }
 }

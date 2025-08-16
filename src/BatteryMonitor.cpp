@@ -10,30 +10,85 @@
 #include <thread>
 #include <chrono>
 
+void BatteryMonitor::printStatus(const bool animated) const {
+    auto [color, bar] = animatedBattery(getCapacity());
+
+    if (animated) clearScreen();
+
+    std::cout << colorText(BWhite, "\nBattery: ")
+                << colorText(C_White, std::to_string(getCapacity()) + "% [" + color + bar + "] ")
+                << (isCharging() ? colorText(BGreen, "(charging)") : colorText(BRed, "(discharging)")) << '\n';
+
+    std::cout << colorText(BPurple, "Cycle Count: ")
+              << colorText(C_Purple, std::to_string(getCycleCount())) << '\n';
+
+    std::cout << colorText(BCyan, "Health: ")
+              << colorText(C_Cyan, std::to_string(getHealth()) + '%') << '\n';
+
+    const int time = getTimeRemaining();
+    std::cout << colorText(BBlue, "Time remaining: ");
+    std::cout << colorText(C_Blue, (time > 0 ? std::to_string(time) + " minutes" : "calculating...")) << '\n';
+
+    if (animated) {
+        std::cout << colorText(BWhite, "\nPress 'q' + Enter to go back.\n");
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
+}
+
+void BatteryMonitor::animatedStatus() const {
+    printStatus(true);
+}
+
+void BatteryMonitor::staticStatus() const {
+    printStatus(false);
+}
+
+void BatteryMonitor::runLiveMonitor() const {
+    std::atomic<bool> stopFlag = false;
+    std::thread inputThread([&stopFlag]() {
+        std::string line;
+        while (!stopFlag) {
+            std::getline(std::cin, line);
+            if (line == "q" || line == "quit") stopFlag = true;
+        }
+    });
+
+    while (!stopFlag) {
+        animatedStatus();
+    }
+
+    inputThread.join();
+}
+
 void BatteryMonitor::execute(const std::vector<std::string>& args) {
     (void) args;
+    clearScreen();
+    for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 
+    const std::vector<std::string> batteryInfo = {
+        "Battery Monitoring Utility",
+        "",
+        "Commands:",
+        "  1  - Show battery status (animated)",
+        "  2  - Show battery status (static)",
+        "",
+        "Navigation:",
+        "  q, quit - go back to main menu"
+    };
+    printBox(batteryInfo);
+
+    std::string input;
     while (true) {
-        auto [color, bar] = animatedBattery(getCapacity());
+        std::cout << "\n\n" << colorText(BWhite, centered("Enter command: ", termWidth()));
+        std::cin >> input;
 
-        std::system("clear");
+        if (input == "q" || input == "quit") return;
 
-        std::cout << colorText(BWhite, "\nBattery: ")
-                    << colorText(C_White, std::to_string(getCapacity()) + "% [" + color + bar + "] ")
-                    << (isCharging() ? colorText(BGreen, "(charging)") : colorText(BRed, "(discharging)")) << '\n';
-
-        std::cout << colorText(BPurple, "Cycle Count: ")
-                  << colorText(C_Purple, std::to_string(getCycleCount())) << '\n';
-
-        std::cout << colorText(BCyan, "Health: ")
-                  << colorText(C_Cyan, std::to_string(getHealth()) + '%') << '\n';
-
-
-        const int time = getTimeRemaining();
-        std::cout << colorText(BBlue, "Time remaining: ");
-        std::cout << colorText(C_Blue, (time > 0 ? std::to_string(time) + " minutes" : "calculating...")) << '\n';
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        switch (std::stoi(input)) {
+            case 1: runLiveMonitor(); break;
+            case 2: staticStatus(); break;
+            default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+        }
     }
 }
 
@@ -76,7 +131,7 @@ bool BatteryMonitor::isCharging() const {
     return value;
 }
 
-int BatteryMonitor::getRegistryIntValue(CFStringRef key) const {
+int BatteryMonitor::getRegistryIntValue(const CFStringRef key) const {
     const io_service_t battery = IOServiceGetMatchingService(
                                 kIOMainPortDefault,
                                 IOServiceMatching("AppleSmartBattery"));
@@ -113,7 +168,7 @@ int BatteryMonitor::getTimeRemaining() const {
     return getIntValue(key);
 }
 
-std::pair<std::string, std::string> BatteryMonitor::animatedBattery(int batteryPercent) const {
+std::pair<std::string, std::string> BatteryMonitor::animatedBattery(const int batteryPercent) const {
     constexpr int width = 20;
     static int animationStep = 0;
 
