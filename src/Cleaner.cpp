@@ -13,18 +13,12 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-std::string Cleaner::lower(std::string& word) {
-    std::ranges::transform(word.begin(), word.end(), word.begin(),
-                       [](const unsigned char c){ return std::tolower(c); });
-    return word;
-}
-
 std::string Cleaner::getFolder() {
     std::string inputFolder;
     std::cout << colorText(BWhite, "\nWrite Folder [cache, xCode, safari]: ");
     std::getline(std::cin, inputFolder);
 
-    return lower(inputFolder);
+    return toLower(inputFolder);
 }
 
 std::string Cleaner::resolveFolderPath(const std::string& key) {
@@ -184,12 +178,12 @@ void Cleaner::removeFile(const std::string& folder) {
         std::cout << colorText(BWhite, "Enter filename to remove: ");
         std::string input;
         std::getline(std::cin, input);
-        std::string inputLower = lower(input);
+        std::string inputLower = toLower(input);
 
         std::vector<std::string> matches;
         for (const auto& [filename, _] : allEntries) {
             std::string filenameLower = filename;
-            filenameLower = lower(filenameLower);
+            filenameLower = toLower(filenameLower);
 
             if (filenameLower.find(inputLower) == 0) {
                 matches.push_back(filename);

@@ -5,7 +5,6 @@
 #pragma once
 #include "IDeviceWatcher.h"
 #include <set>
-#include <IOKit/IOKitLib.h>
 #include <CoreAudio/CoreAudio.h>
 #include <CoreGraphics/CoreGraphics.h>
 

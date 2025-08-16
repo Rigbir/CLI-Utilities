@@ -10,6 +10,7 @@ add_executable(CLI_Utilites src/main.cpp
         src/Cleaner.cpp
         src/WifiMonitor.cpp
         src/DeviceWatcher.cpp
+        include/PrintUtilites.h
 )
 
 target_compile_options(CLI_Utilites PRIVATE -Wextra -Werror)

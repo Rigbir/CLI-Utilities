@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "Colors.h"
+#include "PrintUtilites.h"
 
 class Command {
 public:

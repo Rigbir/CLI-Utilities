@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <iostream>
+#include <IOKit/IOKitLib.h>
 #include <IOKit/usb/IOUSBLib.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/graphics/IOGraphicsLib.h>
@@ -171,11 +172,12 @@ void DeviceWatcher::execute(const std::vector<std::string> &args) {
         std::cin >> inputChoose;
 
         switch (inputChoose) {
-            case 1: usbRun(); return;
-            case 2: audioRun(); return;
-            case 3: displayRun(); return;
-            default: std::cout << colorText(BRed, "\nWrong input!\n"); break;
+            case 1: usbRun(); break;
+            case 2: audioRun(); break;
+            case 3: displayRun(); break;
+            default: std::cout << colorText(BRed, "\nWrong input!\n"); continue;
         }
+        break;
     }
 }
 

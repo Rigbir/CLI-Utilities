@@ -6,6 +6,9 @@
 #include <iostream>
 #include <memory>
 #include <array>
+#include <thread>
+#include <chrono>
+#include <atomic>
 
 void printOutput(const std::string& result) {
     std::cout << "\033[2J\033[H";
@@ -59,10 +62,9 @@ std::string WifiMonitor::runCommandWdutil(const std::string& cmd) {
     return result;
 }
 
-std::string WifiMonitor::runCommandSystem(
-                  const std::string& cmd
-                , const std::string& startMarker
-                , const std::string& endMarker) {
+std::string WifiMonitor::runCommandSystem(const std::string& cmd
+                                        , const std::string& startMarker
+                                        , const std::string& endMarker) {
 
     std::array<char, 128> buffer;
     std::string result;
@@ -93,19 +95,58 @@ std::string WifiMonitor::runCommandSystem(
     return result;
 }
 
+void WifiMonitor::runLiveMonitor(const std::string& command
+                  , const std::string& startMarker
+                  , const std::string& endMarker
+                  , const std::string& message = "Press 'q' + Enter to go back.\n") {
+
+    std::atomic<bool> stopFlag = false;
+    std::thread inputThread([&stopFlag]() {
+        std::string line;
+        while (!stopFlag) {
+            std::getline(std::cin, line);
+            if (line == "q" || line == "quit") stopFlag = true;
+        }
+    });
+
+    while (!stopFlag) {
+        printOutput(runCommandSystem(command, startMarker, endMarker));
+        std::cout << colorText(BWhite, message);
+    }
+
+    inputThread.join();
+}
+
 void WifiMonitor::execute(const std::vector<std::string>& args) {
     (void) args;
+    clearScreen();
+    for (size_t i = 0; i < 9; ++i) std::cout << '\n';
+    
+    const std::vector<std::string> wifiInfo = {
+        "Wi-Fi Monitoring Utility",
+        "",
+        "Commands:",
+        "  1  - Show current connection",
+        "  2  - List available networks",
+        "  3  - Monitor connections",
+        "",
+        "Navigation:",
+        "  q, quit - go back to main menu"
+    };
+    printBox(wifiInfo);
 
+    std::string input;
     while (true) {
-        std::cout << colorText(BWhite, "\nChoose one [1, 2, 3]: ");
-        int inputChoose;
-        std::cin >> inputChoose;
+        std::cout << "\n\n" << colorText(BWhite, centered("Enter command: ", termWidth()));
+        std::cin >> input;
 
-        switch (inputChoose) {
-            case 1: showCurrentConnections(); return;
-            case 2: listConnections(); return;
-            case 3: monitorConnections(); return;
-            default: std::cout << colorText(BRed, "\nWrong input!\n"); break;
+        if (input == "q" || input == "quit") return;
+
+        switch (std::stoi(input)) {
+            case 1: showCurrentConnections(); break;
+            case 2: listConnections(); break;
+            case 3: monitorConnections(); break;
+            default: std::cout << colorText(BRed, "\nWrong input!\n"); continue;
         }
     }
 }
@@ -116,15 +157,11 @@ void WifiMonitor::showCurrentConnections() const {
 }
 
 void WifiMonitor::listConnections() const {
-    while (true) {
-        printOutput(runCommandSystem("system_profiler SPAirPortDataType",
-                                                    "Other Local Wi-Fi Networks:", "awdl0:"));
-    }
+    runLiveMonitor("system_profiler SPAirPortDataType",
+                   "Other Local Wi-Fi Networks:", "awdl0:");
 }
 
 void WifiMonitor::monitorConnections() const {
-    while (true) {
-        printOutput(runCommandSystem("system_profiler SPAirPortDataType",
-                                                    "Current Network Information:", "Other Local Wi-Fi Networks:"));
-    }
+    runLiveMonitor("system_profiler SPAirPortDataType",
+                                 "Current Network Information:", "Other Local Wi-Fi Networks:");
 }
