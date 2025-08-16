@@ -52,8 +52,6 @@ static void showWelcome(const std::map<std::string, std::unique_ptr<Command>>& c
     const int padding = std::abs(w - static_cast<int>(lineFull.size())) / 2;
 
     std::cout << colorText(BCyan,  centered("CLI Utilities", w)) << "\n\n";
-    //std::cout << colorText(C_White, centered("minimal TUI • type a command or press 'h' for help", w)) << "\n\n";
-    //std::cout << colorText(BYellow, centered("[h] help   [q] quit", w)) << "\n\n";
 
     std::cout << std::string(padding, ' ')
                << colorText(BPurple, lineFull) << "\n\n";
