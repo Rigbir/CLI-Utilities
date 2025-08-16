@@ -204,13 +204,28 @@ void Cleaner::removeFile() {
 
         if (inputLower == "quit") return;
 
+        bool exactFound = false;
         std::vector<std::string> matches;
+
         for (const auto& [filename, _] : removeEntries[workFolder]) {
             std::string filenameLower = filename;
             filenameLower = toLower(filenameLower);
+            
+            if (filenameLower == inputLower) {
+                matches = { filename };
+                exactFound = true;
+                break;
+            }
+        }
 
-            if (filenameLower.find(inputLower) != std::string::npos) {
-                matches.push_back(filename);
+        if (!exactFound) {
+            for (const auto& [filename, _] : removeEntries[workFolder]) {
+                std::string filenameLower = filename;
+                filenameLower = toLower(filenameLower);
+
+                if (filenameLower.find(inputLower) != std::string::npos) {
+                    matches.push_back(filename);
+                }
             }
         }
 
