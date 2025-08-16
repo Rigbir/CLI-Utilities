@@ -22,3 +22,5 @@ target_link_libraries(cliutils
         "-framework CoreAudio"
         "-framework CoreGraphics"
 )
+
+install(TARGETS cliutils RUNTIME DESTINATION /usr/local/bin)
