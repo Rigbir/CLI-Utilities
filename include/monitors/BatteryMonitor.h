@@ -14,7 +14,12 @@ public:
     [[nodiscard]] int getCycleCount() const override;
     [[nodiscard]] int getTimeRemaining() const override;
     [[nodiscard]] double getHealth() const override;
-    [[nodiscard]] std::pair<std::string, std::string> animatedBattery(int batteryPercent) const;
+
+    [[nodiscard]] std::pair<std::string, std::string> animatedBattery(const int batteryPercent) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedCycleCount(const int cycleCount) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedHealth(const int healthPercent) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedTime(const int time) const;
+    [[nodiscard]] std::pair<std::string, std::string> staticAnimation(const int value) const;
 
 private:
     [[nodiscard]] static int getIntValue(const CFStringRef key);
