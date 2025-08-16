@@ -4,10 +4,8 @@
 
 #pragma once
 #include "IDeviceWatcher.h"
-#include <set>
 #include <CoreAudio/CoreAudio.h>
 #include <CoreGraphics/CoreGraphics.h>
-
 
 class DeviceWatcher final : public IDeviceWatcher {
 public:
@@ -26,4 +24,7 @@ private:
 
     static std::string displayDeviceName(CGDirectDisplayID displayID);
     static void displayDeviceChanged(const CGDirectDisplayID displayID, const CGDisplayChangeSummaryFlags flags, void*);
+
+    static void runLiveMonitoring(const std::string& title,
+                                  const std::function<void()>& setupNotifications);
 };

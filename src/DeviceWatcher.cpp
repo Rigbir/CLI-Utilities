@@ -4,6 +4,10 @@
 
 #include "DeviceWatcher.h"
 #include <map>
+#include <set>
+#include <thread>
+#include <chrono>
+#include <atomic>
 #include <iomanip>
 #include <sstream>
 #include <iostream>
@@ -40,11 +44,16 @@ std::string DeviceWatcher::usbDeviceName(const io_object_t device) {
 
 void DeviceWatcher::usbDeviceAdded(void *, const io_iterator_t iterator) {
     io_object_t usbDevice;
+    std::set<std::string> nameDevices;
+
     while ((usbDevice = IOIteratorNext(iterator))) {
         std::string name = usbDeviceName(usbDevice);
         if (name.empty()) name = "Unknown USB Device";
-        std::cout << colorText(BWhite, currentTime() + " [+] USB device: " + name + " connected\n");
-        std::cout << colorText(BWhite, std::string(80, '-'));
+
+        if (nameDevices.insert(name).second) {
+            std::cout << colorText(BWhite, currentTime() + " [+] USB device: " + name + " connected\n");
+            std::cout << colorText(BWhite, std::string(80, '-'));
+        }
         IOObjectRelease(usbDevice);
     }
 }
@@ -163,90 +172,128 @@ void DeviceWatcher::displayDeviceChanged(const CGDirectDisplayID displayID, cons
     }
 }
 
+void DeviceWatcher::runLiveMonitoring(const std::string& title,
+                                      const std::function<void()>& setupNotifications) {
+
+    std::atomic<bool> stopFlag = false;
+
+    std::thread inputThread([&stopFlag]() {
+        std::string line;
+        while (!stopFlag) {
+            std::getline(std::cin, line);
+            if (line == "q" || line == "quit") stopFlag = true;
+        }
+    });
+
+    setupNotifications();
+
+    std::cout << colorText(BWhite, "\n[*] " + title + " (press 'q' + Enter to exit)...\n");
+
+    while (!stopFlag) {
+        CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.5, true);
+    }
+
+    CFRunLoopStop(CFRunLoopGetCurrent());
+    inputThread.join();
+}
+
 void DeviceWatcher::execute(const std::vector<std::string> &args) {
     (void) args;
+    clearScreen();
+    for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 
+    const std::vector<std::string> devicesInfo = {
+        "Device Monitoring Utility",
+        "",
+        "Commands:",
+        "  1  - USB devices watcher",
+        "  2  - Audio devices watcher",
+        "  3  - Display devices watcher",
+        "",
+        "Navigation:",
+        "  q, quit - go back to main menu"
+    };
+    printBox(devicesInfo);
+
+    std::string input;
     while (true) {
-        std::cout << colorText(BWhite, "\nChoose one [1, 2, 3]: ");
-        int inputChoose;
-        std::cin >> inputChoose;
+        std::cout << "\n\n" << colorText(BWhite, centered("Enter command: ", termWidth()));
+        std::cin >> input;
 
-        switch (inputChoose) {
+        if (input == "q" || input == "quit") return;
+
+        switch (std::stoi(input)) {
             case 1: usbRun(); break;
             case 2: audioRun(); break;
             case 3: displayRun(); break;
             default: std::cout << colorText(BRed, "\nWrong input!\n"); continue;
         }
-        break;
     }
 }
 
 void DeviceWatcher::usbRun() const {
-    io_iterator_t addedIter;
-    io_iterator_t removedIter;
+    runLiveMonitoring("Waiting for USB device events", []() {
+        io_iterator_t addedIter;
+        io_iterator_t removedIter;
 
-    const IONotificationPortRef notifyPort = IONotificationPortCreate(kIOMainPortDefault);
-    const CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(notifyPort);
-    CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopDefaultMode);
+        const IONotificationPortRef notifyPort = IONotificationPortCreate(kIOMainPortDefault);
+        const CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(notifyPort);
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopDefaultMode);
 
-    IOServiceAddMatchingNotification(
-        notifyPort,
-        kIOFirstMatchNotification,
-        IOServiceMatching(kIOUSBDeviceClassName),
-        usbDeviceAdded,
-        nullptr,
-        &addedIter
-    );
-    usbDeviceAdded(nullptr, addedIter);
+        IOServiceAddMatchingNotification(
+            notifyPort,
+            kIOFirstMatchNotification,
+            IOServiceMatching(kIOUSBDeviceClassName),
+            usbDeviceAdded,
+            nullptr,
+            &addedIter
+        );
+        usbDeviceAdded(nullptr, addedIter);
 
-    IOServiceAddMatchingNotification(
-        notifyPort,
-        kIOTerminatedNotification,
-        IOServiceMatching(kIOUSBDeviceClassName),
-        usbDeviceRemoved,
-        nullptr,
-        &removedIter
-    );
-    usbDeviceRemoved(nullptr, removedIter);
-
-    std::cout << colorText(BWhite, "\n[*] Waiting for USB device events...\n");
-    CFRunLoopRun();
+        IOServiceAddMatchingNotification(
+            notifyPort,
+            kIOTerminatedNotification,
+            IOServiceMatching(kIOUSBDeviceClassName),
+            usbDeviceRemoved,
+            nullptr,
+            &removedIter
+        );
+        usbDeviceRemoved(nullptr, removedIter);
+    });
 }
 
 void DeviceWatcher::audioRun() const {
-    constexpr AudioObjectPropertyAddress addr = {
-        kAudioHardwarePropertyDevices,
-        kAudioObjectPropertyScopeGlobal,
-        kAudioObjectPropertyElementMain
-    };
-    AudioObjectAddPropertyListener(
-        kAudioObjectSystemObject,
-        &addr,
-        audioDevicesChanged,
-        nullptr
-    );
-
-    std::cout << colorText(BWhite, "\n[*] Waiting for Audio device events...\n");
-    CFRunLoopRun();
+    runLiveMonitoring("Waiting for Audio device events", []() {
+        constexpr AudioObjectPropertyAddress addr = {
+            kAudioHardwarePropertyDevices,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain
+        };
+        AudioObjectAddPropertyListener(
+            kAudioObjectSystemObject,
+            &addr,
+            audioDevicesChanged,
+            nullptr
+        );
+    });
 }
 
 void DeviceWatcher::displayRun() const {
-    CGDirectDisplayID displays[32];
-    uint32_t displayCount = 0;
-    CGGetOnlineDisplayList(32, displays, &displayCount);
+    runLiveMonitoring("Waiting for Display device events", []() {
+        CGDirectDisplayID displays[32];
+        uint32_t displayCount = 0;
+        CGGetOnlineDisplayList(32, displays, &displayCount);
 
-    for (uint32_t i = 0; i < displayCount; ++i) {
-        CGDirectDisplayID id = displays[i];
-        if (!currentDisplays.contains(id)) {
-            std::string name = displayDeviceName(id);
-            currentDisplays[id] = name;
-            std::cout << colorText(BWhite, currentTime() + " [+] Display connected: " + name + "\n");
-            std::cout << colorText(BWhite, std::string(80, '-'));
+        for (uint32_t i = 0; i < displayCount; ++i) {
+            CGDirectDisplayID id = displays[i];
+            if (!currentDisplays.contains(id)) {
+                std::string name = displayDeviceName(id);
+                currentDisplays[id] = name;
+                std::cout << colorText(BWhite, currentTime() + " [+] Display connected: " + name + "\n");
+                std::cout << colorText(BWhite, std::string(80, '-'));
+            }
         }
-    }
 
-    std::cout << colorText(BWhite, "\n[*] Waiting for Display events...\n");
-    CGDisplayRegisterReconfigurationCallback(displayDeviceChanged, nullptr);
-
-    CFRunLoopRun();
+        CGDisplayRegisterReconfigurationCallback(displayDeviceChanged, nullptr);
+    });
 }

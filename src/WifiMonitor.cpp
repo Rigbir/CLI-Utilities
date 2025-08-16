@@ -121,7 +121,7 @@ void WifiMonitor::execute(const std::vector<std::string>& args) {
     (void) args;
     clearScreen();
     for (size_t i = 0; i < 9; ++i) std::cout << '\n';
-    
+
     const std::vector<std::string> wifiInfo = {
         "Wi-Fi Monitoring Utility",
         "",
