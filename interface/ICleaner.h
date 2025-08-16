@@ -9,5 +9,5 @@ class ICleaner : public Command {
 public:
     virtual void getAllInfo() = 0;
     virtual std::string getStats(const std::string& path) const = 0;
-    virtual void removeFile(const std::string& folder)  = 0;
+    virtual void removeFile()  = 0;
 };

@@ -15,9 +15,9 @@
 
 std::string Cleaner::getFolder() {
     std::string inputFolder;
-    std::cout << colorText(BWhite, "\nWrite Folder [cache, xCode, safari]: ");
+    std::cout << '\n' << colorText(BWhite, centered("Write Folder [cache, xCode, safari]: ", termWidth()));
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::getline(std::cin, inputFolder);
-
     return toLower(inputFolder);
 }
 
@@ -33,7 +33,7 @@ std::string Cleaner::resolveFolderPath(const std::string& key) {
     return "";
 }
 
-void Cleaner::printFileInFolder(const std::string& folder) const {
+void Cleaner::printFileInFolder(const std::string& folder) {
     DIR* dir = opendir(folder.c_str());
     std::cout << colorText(BRed, "\nDirectory: " + folder) << "\n\n" << std::string(70, '-') << '\n';
 
@@ -47,9 +47,14 @@ void Cleaner::printFileInFolder(const std::string& folder) const {
     while ((entry = readdir(dir)) != nullptr) {
         if (std::string name = entry->d_name; name != "." && name != "..") {
             names.push_back(name);
+            removeEntries[folder][name] = getStats(folder + name);
         }
     }
     closedir(dir);
+
+    if (names.empty()) {
+        std::cout << colorText(BYellow, "\nDirectory is empty.\n");
+    }
 
     std::sort(names.begin(), names.end());
 
@@ -70,7 +75,7 @@ std::string formatTime(time_t t) {
 bool confirmation() {
     char confirm;
     while (true) {
-        std::cout << colorText(BRed, "\nAre you sure? [y/n]: ");
+        std::cout << '\n' << colorText(BRed, centered("Are you sure? [y/n]: ", termWidth()));
         std::cin >> confirm;
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -83,21 +88,32 @@ bool confirmation() {
 
 void Cleaner::execute(const std::vector<std::string>& args) {
     (void) args;
-    getAllInfo();
+    clearScreen();
+    for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 
-    char del;
+    const std::vector<std::string> cleanerInfo = {
+        "Cleaner Utility",
+        "",
+        "Commands:",
+        "  1  - Show all info",
+        "  2  - Remove files from directory",
+        "",
+        "Navigation:",
+        "  q, quit - go back to main menu"
+    };
+    printBox(cleanerInfo);
+
+    std::string input;
     while (true) {
-        std::cout << colorText(BWhite, "\nAre you want delete dir/file? [y/n]: ");
-        std::cin >> del;
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "\n\n" << colorText(BWhite, centered("Enter command: ", termWidth()));
+        std::cin >> input;
 
-        if (del == 'y' || del == 'Y') {
-            std::string folder = getFolder();
-            removeFile(folder);
-        } else if (del == 'n' || del == 'N') {
-            return;
-        } else {
-            std::cout << colorText(BYellow, "Invalid input. Please enter 'y' or 'n'.\n");
+        if (input == "q" || input == "quit") return;
+
+        switch (std::stoi(input)) {
+            case 1: getAllInfo(); break;
+            case 2: removeFile(); break;
+            default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
         }
     }
 }
@@ -130,10 +146,14 @@ void Cleaner::getAllInfo() {
         while ((entry = readdir(dir)) != nullptr) {
             if (std::string name = entry->d_name; name != "." && name != "..") {
                 entries[name] = getStats(folder + name);
-                allEntries[name] = getStats(folder + name);
+                allEntries[folder][name] = getStats(folder + name);
             }
         }
         closedir(dir);
+
+        if (entries.empty()) {
+            std::cout << colorText(BYellow, "\nDirectory is empty.\n\n");
+        }
 
         for (const auto& [filename, stats] : entries) {
             std::cout << std::left
@@ -165,51 +185,54 @@ std::string Cleaner::getStats(const std::string& path) const {
     return oss.str();
 }
 
-void Cleaner::removeFile(const std::string& folder) {
+void Cleaner::removeFile() {
+    const std::string folder = getFolder();
     const std::string workFolder = resolveFolderPath(folder);
+
     if (workFolder.empty()) {
-        std::cerr << colorText(BRed, "Unknown folder key: " + folder) << '\n';
+        std::cerr << '\n' << colorText(BRed, centered(("Unknown folder key: " + folder), termWidth())) << '\n';
         return;
     }
 
     printFileInFolder(workFolder);
 
     while (true) {
-        std::cout << colorText(BWhite, "Enter filename to remove: ");
+        std::cout << '\n' << colorText(BWhite, centered("Enter filename to remove or 'quit' for Exit: ", termWidth()));
         std::string input;
         std::getline(std::cin, input);
         std::string inputLower = toLower(input);
 
+        if (inputLower == "quit") return;
+
         std::vector<std::string> matches;
-        for (const auto& [filename, _] : allEntries) {
+        for (const auto& [filename, _] : removeEntries[workFolder]) {
             std::string filenameLower = filename;
             filenameLower = toLower(filenameLower);
 
-            if (filenameLower.find(inputLower) == 0) {
+            if (filenameLower.find(inputLower) != std::string::npos) {
                 matches.push_back(filename);
             }
         }
 
         if (matches.empty()) {
-            std::cout << colorText(BRed, "No match found!\n");
+            std::cout << '\n' << colorText(BRed, centered("No match found!\n", termWidth()));
             continue;
         } else if (matches.size() == 1) {
-            std::cout << colorText(BWhite, "\nFind file: " + matches[0]) << '\n';
+            std::cout << '\n' << colorText(BWhite, centered(("Find file: " + matches[0]), termWidth())) << '\n';
             if (confirmation()) {
-
                 std::filesystem::is_directory(workFolder)
                 ? std::filesystem::remove_all((workFolder + matches[0]).c_str())
                 : std::filesystem::remove((workFolder + matches[0]).c_str());
 
-                allEntries.erase(matches[0]);
-                std::cout << colorText(BYellow, "\nFile was deleted.\n");
+                removeEntries.erase(matches[0]);
+                std::cout << '\n' << colorText(BYellow, centered("File was deleted.\n", termWidth()));
             }
             break;
         } else {
-            std::cout << colorText(BWhite, "\nMultiple matches found:\n");
+            std::cout << '\n' << colorText(BWhite, centered("Multiple matches found:\n", termWidth()));
             for (const auto& file : matches) {
                 std::cout << colorText(BCyan, file) << '\n';
             }
-            std::cout << colorText(BWhite, "\nPlease enter more specific name.\n");        }
+            std::cout << '\n' << colorText(BWhite, centered("Please enter more specific name.\n", termWidth()));        }
     }
 }
