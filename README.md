@@ -14,11 +14,14 @@ A set of command-line tools for `macOS` that helps monitor system state and perf
     - Scans `~/Library/Caches`, `Xcode temporary folders`, `Safari caches`.
     - Suggests removing unnecessary files to free up disk space
 
-3. **Wi-Fi Monitoring**
+3. **Code Counter**
+    - Counts `.h` & `.cpp` File, Lines in Project and shows in a table.
+
+4. **Wi-Fi Monitoring**
     - Lists all known networks
     - Shows current speed and signal strength
 
-4. **Device Monitoring**
+5. **Device Monitoring**
     - Tracks USB drives, Headphones, and external monitors when plugged/unplugged
     - Sends notifications directly to the terminal
 

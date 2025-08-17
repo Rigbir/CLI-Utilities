@@ -96,6 +96,7 @@ static void showHelp() {
         "Examples:",
         "  ./app battery",
         "  ./app cleaner",
+        "  ./app codecounter",
         "  ./app wifi",
         "  ./app device"
     };
