@@ -52,9 +52,8 @@ void BatteryMonitor::printStatus(const bool animated) const {
               << colorText(C_Blue, (time > 0 ? std::to_string(time) + " minutes" : "calculating..."))
               << colorText(C_Blue, " [" + colorTime + barTime + "] ") << '\n';
 
-    std::cout << colorText(BWhite, "\nPress 'q' + Enter to go back.\n");
-
     if (animated) {
+        std::cout << colorText(BWhite, "\nPress 'q' + Enter to go back.\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
     }
 }
@@ -192,24 +191,27 @@ int BatteryMonitor::getTimeRemaining() const {
     return getIntValue(key);
 }
 
-std::pair<std::string, std::string> BatteryMonitor::animatedBattery(const int batteryPercent) const {
+std::pair<std::string, std::string> BatteryMonitor::animatedBar(const int valuePercent,
+                                                                const std::vector<std::string>& pulseChars = {"█"},
+                                                                const bool animate = false) const {
     constexpr int width = 20;
     static int animationStep = 0;
 
     std::string color;
-    if (batteryPercent > 80) color = BGreen;
-    else if (batteryPercent >= 40) color = BYellow;
+    if (valuePercent > 80) color = BGreen;
+    else if (valuePercent >= 40) color = BYellow;
     else color = BRed;
 
-    const int filled = batteryPercent * width / 100;
+    const int filled = valuePercent * width / 100;
     const int empty = width - filled;
 
     std::vector<std::string> bar(filled, "█");
     bar.insert(bar.end(), empty, "-");
 
-    if (isCharging() && filled > 0) {
-        const int animPos = animationStep % filled;
-        bar[animPos] = "░";
+    if (animate && filled > 0) {
+        for (int i = 0; i < filled; ++i) {
+            bar[i] = pulseChars[(i + animationStep) % pulseChars.size()];
+        }
         ++animationStep;
     }
 
@@ -219,97 +221,41 @@ std::pair<std::string, std::string> BatteryMonitor::animatedBattery(const int ba
     }
 
     return {color, barStr};
+}
+
+std::pair<std::string, std::string> BatteryMonitor::animatedBattery(const int batteryPercent) const {
+    std::vector<std::string> pulseChars = {"█", "░"};
+    return isCharging() ? animatedBar(batteryPercent, pulseChars, true)
+                        : animatedBar(batteryPercent);
+
 }
 
 std::pair<std::string, std::string> BatteryMonitor::animatedCycleCount(const int cycleCount) const {
-    constexpr int width = 20;
-    static int animationStep = 0;
-    const int cycleCountPercent = 100 - (cycleCount / 10);
-
-    std::string color;
-    if (cycleCountPercent > 80) color = BGreen;
-    else if (cycleCountPercent >= 40) color = BYellow;
-    else color = BRed;
-
-    const int filled = cycleCountPercent * width / 100;
-    const int empty = width - filled;
-
-    std::vector<std::string> bar(filled, "█");
-    bar.insert(bar.end(), empty, "-");
-
-    const std::vector<std::string> pulseChars = {"█","▓","▒","░"};
-    for (int i = 0; i < filled; ++i) {
-        bar[i] = pulseChars[(i + animationStep) % pulseChars.size()];
-    }
-    ++animationStep;
-
-    std::string barStr;
-    for (const auto& c : bar) {
-        barStr += c;
-    }
-
-    return {color, barStr};
+    std::vector<std::string> pulse = {"█","▓","▒","░"};
+    int cycleCountPercent = 100 - (cycleCount / 10);
+    return animatedBar(cycleCountPercent, pulse, true);
 }
 
 std::pair<std::string, std::string> BatteryMonitor::animatedHealth(const double healthPercent) const {
-    constexpr int width = 20;
-    static int animationStep = 0;
-
-    std::string color;
-    if (healthPercent > 80) color = BGreen;
-    else if (healthPercent >= 40) color = BYellow;
-    else color = BRed;
-
-    const int filled = static_cast<int>(healthPercent) * width / 100;
-    const int empty = width - filled;
-
-    std::vector<std::string> bar(filled, "█");
-    bar.insert(bar.end(), empty, "-");
-
-    if (filled > 0) {
-        const int animPos = animationStep % filled;
-        bar[animPos] = " ";
-        ++animationStep;
-    }
-
-    std::string barStr;
-    for (const auto& c : bar) {
-        barStr += c;
-    }
-
-    return {color, barStr};
+    std::vector<std::string> pulse = {"█", " "};
+    return animatedBar(static_cast<int>(healthPercent), pulse, true);
 }
 
 std::pair<std::string, std::string> BatteryMonitor::animatedTime(const int time) const {
-    constexpr int width = 20;
-    static int animationStep = 0;
     static int timeToCharge = 120;
     static int timeToDischarge = 500;
-    const int timePercent = isCharging() ? time * 100 / timeToCharge : time * 100 / timeToDischarge;
-
-    std::string color;
-    if (timePercent > 80) color = BGreen;
-    else if (timePercent >= 40) color = BYellow;
-    else color = BRed;
-
-    const int filled = timePercent * width / 100;
-    const int empty = width - filled;
-
-    std::vector<std::string> bar(filled, "█");
-    bar.insert(bar.end(), empty, "-");
-
-    const std::vector<std::string> colors = {BWhite, BRed, BGreen, BYellow, BBlue, BPurple, BCyan};
-    for (int i = 0; i < filled; ++i) {
-        bar[i] = colors[(i + animationStep) % colors.size()] + "█";
-    }
-    ++animationStep;
-
-    std::string barStr;
-    for (const auto& c : bar) {
-        barStr += c;
-    }
-
-    return {color, barStr};
+    const int timePercent = isCharging() ? time * 100 / timeToCharge
+                                         : time * 100 / timeToDischarge;
+    std::vector<std::string> colors = {
+        std::string(BWhite) + "█",
+        std::string(BRed) + "█",
+        std::string(BGreen) + "█",
+        std::string(BYellow) + "█",
+        std::string(BBlue) + "█",
+        std::string(BPurple) + "█",
+        std::string(BCyan) + "█"
+    };
+    return animatedBar(timePercent, colors, true);
 }
 
 std::pair<std::string, std::string> BatteryMonitor::staticAnimation(const int value) const {

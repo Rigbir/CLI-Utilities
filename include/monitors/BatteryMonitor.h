@@ -15,16 +15,20 @@ public:
     [[nodiscard]] int getTimeRemaining() const override;
     [[nodiscard]] double getHealth() const override;
 
-    [[nodiscard]] std::pair<std::string, std::string> animatedBattery(const int batteryPercent) const;
-    [[nodiscard]] std::pair<std::string, std::string> animatedCycleCount(const int cycleCount) const;
-    [[nodiscard]] std::pair<std::string, std::string> animatedHealth(const double healthPercent) const;
-    [[nodiscard]] std::pair<std::string, std::string> animatedTime(const int time) const;
-    [[nodiscard]] std::pair<std::string, std::string> staticAnimation(const int value) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedBar(int valuePercent,
+                                                                  const std::vector<std::string> &pulseChars,
+                                                                  bool animate) const;
+
+    [[nodiscard]] std::pair<std::string, std::string> animatedBattery(int batteryPercent) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedCycleCount(int cycleCount) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedHealth(double healthPercent) const;
+    [[nodiscard]] std::pair<std::string, std::string> animatedTime(int time) const;
+    [[nodiscard]] std::pair<std::string, std::string> staticAnimation(int value) const;
 
 private:
-    [[nodiscard]] static int getIntValue(const CFStringRef key);
+    [[nodiscard]] static int getIntValue(CFStringRef key);
     void runLiveMonitor() const;
-    void printStatus(const bool animated) const;
+    void printStatus(bool animated) const;
     void animatedStatus() const;
     void staticStatus() const;
 };

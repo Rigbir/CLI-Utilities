@@ -42,7 +42,7 @@ std::string DeviceWatcher::usbDeviceName(const io_object_t device) {
     return result;
 }
 
-void DeviceWatcher::usbDeviceAdded(void *, const io_iterator_t iterator) {
+void DeviceWatcher::usbDeviceAdded(void*, const io_iterator_t iterator) {
     io_object_t usbDevice;
     std::set<std::string> nameDevices;
 
@@ -58,7 +58,7 @@ void DeviceWatcher::usbDeviceAdded(void *, const io_iterator_t iterator) {
     }
 }
 
-void DeviceWatcher::usbDeviceRemoved(void *, const io_iterator_t iterator) {
+void DeviceWatcher::usbDeviceRemoved(void*, const io_iterator_t iterator) {
     io_object_t usbDevice;
     while ((usbDevice = IOIteratorNext(iterator))) {
         std::string name = usbDeviceName(usbDevice);

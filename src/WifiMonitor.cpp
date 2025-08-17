@@ -62,9 +62,9 @@ std::string WifiMonitor::runCommandWdutil(const std::string& cmd) {
     return result;
 }
 
-std::string WifiMonitor::runCommandSystem(const std::string& cmd
-                                        , const std::string& startMarker
-                                        , const std::string& endMarker) {
+std::string WifiMonitor::runCommandSystem(const std::string& cmd,
+                                          const std::string& startMarker,
+                                          const std::string& endMarker) {
 
     std::array<char, 128> buffer;
     std::string result;
@@ -95,10 +95,10 @@ std::string WifiMonitor::runCommandSystem(const std::string& cmd
     return result;
 }
 
-void WifiMonitor::runLiveMonitor(const std::string& command
-                  , const std::string& startMarker
-                  , const std::string& endMarker
-                  , const std::string& message = "Press 'q' + Enter to go back.\n") {
+void WifiMonitor::runLiveMonitor(const std::string& command,
+                                 const std::string& startMarker,
+                                 const std::string& endMarker,
+                                 const std::string& message = "Press 'q' + Enter to go back.\n") {
 
     std::atomic<bool> stopFlag = false;
     std::thread inputThread([&stopFlag]() {
