@@ -10,6 +10,7 @@ add_executable(cliutils src/main.cpp
         src/Cleaner.cpp
         src/WifiMonitor.cpp
         src/DeviceWatcher.cpp
+        src/CodeCounter.cpp
 )
 
 target_compile_options(cliutils PRIVATE -Wextra -Werror)

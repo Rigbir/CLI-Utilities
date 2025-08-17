@@ -3,6 +3,7 @@
 #include "Cleaner.h"
 #include "DeviceWatcher.h"
 #include "WifiMonitor.h"
+#include "CodeCounter.h"
 
 #include <iostream>
 #include <string>
@@ -78,10 +79,11 @@ static void showHelp() {
         "CLI Utilities - mini TUI",
         "",
         "Commands:",
-        "  battery  - Battery monitoring tools",
-        "  cleaner  - Cleaner utilities",
-        "  wifi     - Wi-Fi monitoring",
-        "  device   - USB / Audio / Display watcher",
+        "  battery      - Battery monitoring tools",
+        "  cleaner      - Cleaner utilities",
+        "  codecounter  - Project Line Counter utilities",
+        "  wifi         - Wi-Fi monitoring",
+        "  device       - USB / Audio / Display watcher",
         "",
         "Usage:",
         "  ./app <command>",
@@ -111,6 +113,7 @@ int main(const int argc, const char* argv[]) {
     commands["cleaner"] = std::make_unique<Cleaner>();
     commands["wifi"]    = std::make_unique<WifiMonitor>();
     commands["device"]  = std::make_unique<DeviceWatcher>();
+    commands["codecounter"] = std::make_unique<CodeCounter>();
 
     if (argc > 1) {
         const std::string cmd = argv[1];
