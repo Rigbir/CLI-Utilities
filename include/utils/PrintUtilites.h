@@ -77,9 +77,9 @@ inline void printTable(const std::vector<FileStats>& headers,
                        const size_t totalHeaders, const size_t totalSources)
 {
     const int headerColWidth = std::max(7, static_cast<int>(std::max_element(headers.begin(), headers.end(),
-                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5);
+                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5 + 6);
     const int sourceColWidth = std::max(7, static_cast<int>(std::max_element(sources.begin(), sources.end(),
-                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5);
+                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5 + 6);
     const int tableWidth = headerColWidth + sourceColWidth + 3 + 2;
     const int leftPadding = std::max(0, (termWidth() - tableWidth) / 2);
 
@@ -90,7 +90,10 @@ inline void printTable(const std::vector<FileStats>& headers,
     };
 
     auto pad = [repeat](const std::string &s, const int w) {
-        return s + repeat(" ", w - s.size());
+        const int contentWidth = std::max(0, w - 2);
+        const std::string trimmed = s.substr(0, contentWidth);
+        const int rightPad = contentWidth - trimmed.size();
+        return " " + trimmed + std::string(rightPad, ' ') + " ";
     };
 
     std::cout << std::string(leftPadding, ' ')
