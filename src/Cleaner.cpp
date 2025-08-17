@@ -210,7 +210,7 @@ void Cleaner::removeFile() {
         for (const auto& [filename, _] : removeEntries[workFolder]) {
             std::string filenameLower = filename;
             filenameLower = toLower(filenameLower);
-            
+
             if (filenameLower == inputLower) {
                 matches = { filename };
                 exactFound = true;
