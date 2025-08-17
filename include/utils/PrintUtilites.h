@@ -3,10 +3,12 @@
 //
 
 #pragma once
+#include "Structs.h"
 #include <iostream>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <valarray>
+#include <algorithm>
 
 inline void clearScreen() {
     std::cout << "\033[2J\033[H";
@@ -67,5 +69,87 @@ inline void printBox(const std::vector<std::string>& lines) {
     std::cout << std::string(left, ' ')
               << colorText(BWhite, "└")
               << colorText(BWhite, repeat("─", inner + 2))
+              << colorText(BWhite, "┘\n");
+}
+
+inline void printTable(const std::vector<FileStats>& headers,
+                       const std::vector<FileStats>& sources,
+                       const size_t totalHeaders, const size_t totalSources)
+{
+    const int headerColWidth = std::max(7, static_cast<int>(std::max_element(headers.begin(), headers.end(),
+                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5);
+    const int sourceColWidth = std::max(7, static_cast<int>(std::max_element(sources.begin(), sources.end(),
+                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5);
+    const int tableWidth = headerColWidth + sourceColWidth + 3 + 2;
+    const int leftPadding = std::max(0, (termWidth() - tableWidth) / 2);
+
+    auto repeat = [](const std::string& s, const int n){
+        std::string out;
+        for (int i = 0; i < n; ++i) out += s;
+        return out;
+    };
+
+    auto pad = [repeat](const std::string &s, const int w) {
+        return s + repeat(" ", w - s.size());
+    };
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "┌") << colorText(BWhite, repeat("─", headerColWidth))
+              << colorText(BWhite, "─┬─") << colorText(BWhite, repeat("─", sourceColWidth))
+              << colorText(BWhite, "┐\n");
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "│") << colorText(BWhite, pad("Headers", headerColWidth))
+              << colorText(BWhite, " │") << colorText(BWhite, pad("Sources", sourceColWidth))
+              << colorText(BWhite, " │\n");
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "├") << colorText(BWhite, repeat("─", headerColWidth))
+              << colorText(BWhite, "─┼─") << colorText(BWhite, repeat("─", sourceColWidth))
+              << colorText(BWhite, "┤\n");
+
+    const size_t rows = std::max(headers.size(), sources.size());
+    for (size_t i = 0; i < rows; ++i) {
+        std::string h = (i < headers.size()) ? headers[i].name + " - " + std::to_string(headers[i].lines) : "";
+        std::string s = (i < sources.size()) ? sources[i].name + " - " + std::to_string(sources[i].lines) : "";
+        if (h.empty() && s.empty()) continue;
+
+        std::cout << std::string(leftPadding, ' ')
+                  << colorText(BWhite, "│") << colorText(BWhite, pad(h, headerColWidth))
+                  << colorText(BWhite, " │") << colorText(BWhite, pad(s, sourceColWidth))
+                  << colorText(BWhite, " │\n");
+    }
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "├") << colorText(BWhite, repeat("─", headerColWidth))
+              << colorText(BWhite, "─┼─") << colorText(BWhite, repeat("─", sourceColWidth))
+              << colorText(BWhite, "┤\n");
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "│") << colorText(BWhite, pad("Total(.h) lines - " + std::to_string(totalHeaders), headerColWidth))
+              << colorText(BWhite, " │") << colorText(BWhite, pad("Total(.cpp) lines - " + std::to_string(totalSources), sourceColWidth))
+              << colorText(BWhite, " │\n");
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "├") << colorText(BWhite, repeat("─", headerColWidth))
+              << colorText(BWhite, "─┼─") << colorText(BWhite, repeat("─", sourceColWidth))
+              << colorText(BWhite, "┤\n");
+
+    const size_t totalLines = totalHeaders + totalSources;
+    const std::string totalStr = "Total lines - " + std::to_string(totalLines);
+    const int innerWidth = headerColWidth + sourceColWidth + 3;
+    const int leftInnerPadding = (innerWidth - totalStr.size()) / 2;
+    const int rightInnerPadding = innerWidth - totalStr.size() - leftInnerPadding;
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "│")
+              << colorText(BWhite, std::string(leftInnerPadding, ' '))
+              << colorText(BWhite, totalStr)
+              << colorText(BWhite, std::string(rightInnerPadding, ' '))
+              << colorText(BWhite, "│\n");
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "└") << colorText(BWhite, repeat("─", headerColWidth))
+              << colorText(BWhite, "─┴─") << colorText(BWhite, repeat("─", sourceColWidth))
               << colorText(BWhite, "┘\n");
 }

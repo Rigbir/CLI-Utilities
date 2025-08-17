@@ -11,6 +11,7 @@ add_executable(cliutils src/main.cpp
         src/WifiMonitor.cpp
         src/DeviceWatcher.cpp
         src/CodeCounter.cpp
+        include/utils/Structs.h
 )
 
 target_compile_options(cliutils PRIVATE -Wextra -Werror)
