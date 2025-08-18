@@ -110,10 +110,14 @@ void Cleaner::execute(const std::vector<std::string>& args) {
 
         if (input == "q" || input == "quit") return;
 
-        switch (std::stoi(input)) {
-            case 1: getAllInfo(); break;
-            case 2: removeFile(); break;
-            default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+        try {
+            switch (std::stoi(input)) {
+                case 1: getAllInfo(); break;
+                case 2: removeFile(); break;
+                default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+            }
+        } catch (const std::invalid_argument&) {
+            std::cout << '\n' << colorText(BRed, centered("Please enter a number!\n", termWidth()));
         }
     }
 }
