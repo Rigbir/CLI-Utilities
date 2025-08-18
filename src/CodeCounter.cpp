@@ -22,7 +22,8 @@ void CodeCounter::initMap() {
         {"swift", { {".swift"}, "Swift"}},
         {"kotlin", { {".kt", ".kts"}, "Kotlin"}},
         {"php", { {".php"}, "PHP"}},
-        {"ruby", { {".rb"}, "Ruby"}}
+        {"ruby", { {".rb"}, "Ruby"}},
+        {"assembly", { {".asm"}, "Assembly"}}
     };
 }
 
@@ -86,8 +87,8 @@ void CodeCounter::execute(const std::vector<std::string>& args) {
         "  2  - Show project Language line count",
         "",
         "Supported Languages:",
-        "  C++, Java, Python, JavaScript, TypeScript,",
-        "  C#, Go, Rust, Swift, Kotlin, PHP, Ruby",
+        "  C++, C#, Java, Python, Go, Rust, PHP, Assembly,",
+        "  JavaScript, TypeScript, Swift, Kotlin, Ruby",
         "",
         "Navigation:",
         "  q, quit - go back to main menu"
