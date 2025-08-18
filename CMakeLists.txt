@@ -12,6 +12,9 @@ add_executable(cliutils src/main.cpp
         src/DeviceWatcher.cpp
         src/CodeCounter.cpp
         include/utils/Structs.h
+        interface/ISystemInfo.h
+        include/monitors/SystemInfo.h
+        src/SystemInfo.cpp
 )
 
 target_compile_options(cliutils PRIVATE -Wextra -Werror)

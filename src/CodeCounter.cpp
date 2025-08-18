@@ -79,7 +79,7 @@ void CodeCounter::execute(const std::vector<std::string>& args) {
     clearScreen();
     for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 
-    const std::vector<std::string> batteryInfo = {
+    const std::vector<std::string> codeCounterInfo = {
         "Code Counter Utility",
         "",
         "Commands:",
@@ -93,7 +93,7 @@ void CodeCounter::execute(const std::vector<std::string>& args) {
         "Navigation:",
         "  q, quit - go back to main menu"
     };
-    printBox(batteryInfo);
+    printBox(codeCounterInfo);
 
     std::string input;
     while (true) {
