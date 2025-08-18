@@ -11,9 +11,6 @@ add_executable(cliutils src/main.cpp
         src/WifiMonitor.cpp
         src/DeviceWatcher.cpp
         src/CodeCounter.cpp
-        include/utils/Structs.h
-        interface/ISystemInfo.h
-        include/monitors/SystemInfo.h
         src/SystemInfo.cpp
 )
 
