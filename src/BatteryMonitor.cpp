@@ -56,6 +56,8 @@ void BatteryMonitor::printStatus(const bool animated) const {
         std::cout << colorText(BWhite, "\nPress 'q' + Enter to go back.\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
     }
+
+    std::cout << std::flush;
 }
 
 void BatteryMonitor::animatedStatus() const {
@@ -107,10 +109,14 @@ void BatteryMonitor::execute(const std::vector<std::string>& args) {
 
         if (input == "q" || input == "quit") return;
 
-        switch (std::stoi(input)) {
-            case 1: runLiveMonitor(); break;
-            case 2: staticStatus(); break;
-            default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+        try {
+            switch (std::stoi(input)) {
+                case 1: runLiveMonitor(); break;
+                case 2: staticStatus(); break;
+                default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+            }
+        } catch (const std::invalid_argument&) {
+            std::cout << '\n' << colorText(BRed, centered("Please enter a number!\n", termWidth()));
         }
     }
 }

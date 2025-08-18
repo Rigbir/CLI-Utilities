@@ -102,16 +102,21 @@ void CodeCounter::execute(const std::vector<std::string>& args) {
 
         if (input == "q" || input == "quit") return;
 
-        switch (std::stoi(input)) {
-            case 1: getFolderStats(); break;
-            case 2: getLangStats(); break;
-            default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+        try {
+            switch (std::stoi(input)) {
+                case 1: getFolderStats(); break;
+                case 2: getLangStats(); break;
+                default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+            }
+        } catch (const std::invalid_argument&) {
+            std::cout << '\n' << colorText(BRed, centered("Please enter a number!\n", termWidth()));
         }
     }
 }
 
 void CodeCounter::getFolderStats() const {
     const std::string folderPath = inputFolder();
+    if (folderPath.empty()) return;
 
     std::vector<FileStats> headers;
     std::vector<FileStats> sources;
@@ -145,6 +150,7 @@ void CodeCounter::getFolderStats() const {
 void CodeCounter::getLangStats() {
     initMap();
     const std::string folderPath = inputFolder();
+    if (folderPath.empty()) return;
 
     std::map<std::string, std::vector<FileStats>> filesByLang;
     std::map<std::string, size_t> totalsByLang;
