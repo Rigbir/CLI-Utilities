@@ -11,19 +11,20 @@ A set of command-line tools for `macOS` that helps monitor system state and perf
     - Estimates Time to full charge or discharge
 
 2. **Junk Cleaner**
-    - Scans `~/Library/Caches`, `Xcode temporary folders`, `Safari caches`.
+    - Scans `~/Library/Caches`, `Xcode temporary folders`, `Safari caches`
     - Suggests removing unnecessary files to free up disk space
 
 3. **Code Counter**
-    - Counts `.h` & `.cpp` File, Lines in Project and shows in a table.
+    - Analyzes project files across `C++, Python, Java, JavaScript, and more`
+    - Groups results by language and file type
 
 4. **Wi-Fi Monitoring**
     - Lists all known networks
     - Shows current speed and signal strength
 
 5. **Device Monitoring**
-    - Tracks USB drives, Headphones, and external monitors when plugged/unplugged
-    - Sends notifications directly to the terminal
+    - Tracks `USB drives`, `Headphones`, and `external monitors` when plugged/unplugged
+    - Sends notifications directly to the `terminal`
 
 ---
 
