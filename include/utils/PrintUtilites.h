@@ -4,11 +4,15 @@
 
 #pragma once
 #include "Structs.h"
+#include <map>
 #include <iostream>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <valarray>
 #include <algorithm>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 inline void clearScreen() {
     std::cout << "\033[2J\033[H";
@@ -155,4 +159,47 @@ inline void printTable(const std::vector<FileStats>& headers,
               << colorText(BWhite, "└") << colorText(BWhite, repeat("─", headerColWidth))
               << colorText(BWhite, "─┴─") << colorText(BWhite, repeat("─", sourceColWidth))
               << colorText(BWhite, "┘\n");
+}
+
+inline void printByLanguage(const std::map<std::string, std::vector<FileStats>>& filesByLang,
+                            const std::map<std::string, size_t>& totalsByLang,
+                            const std::map<std::string, LangConfig>& languageMap) {
+
+    for (const auto& [langKey, files] : filesByLang) {
+
+        std::string langName = langKey;
+        auto itMap = languageMap.find(langKey);
+        if (itMap != languageMap.end()) langName = itMap->second.name;
+
+        std::vector<std::string> lines;
+        lines.push_back("Language: " + langName);
+
+        std::map<std::string, std::vector<FileStats>> byExt;
+        for (const auto& f : files) {
+            auto ext = fs::path(f.name).extension().string();
+            if (ext.empty()) ext = "[no-ext]";
+            byExt[ext].push_back(f);
+        }
+
+        for (const auto& [ext, extFiles] : byExt) {
+            lines.push_back(" ├ " + ext);
+            for (const auto& f : extFiles) {
+                lines.push_back(" │   " + f.name + " - " + std::to_string(f.lines));
+            }
+        }
+
+        size_t langTotal = 0;
+        auto it = totalsByLang.find(langKey);
+        if (it != totalsByLang.end()) langTotal = it->second;
+        lines.push_back(" └ Overall: " + std::to_string(langTotal));
+
+        int maxWidth = 0;
+        for (const auto& l : lines) maxWidth = std::max(maxWidth, static_cast<int>(l.size()));
+        const int leftPadding = std::max(0, (termWidth() - maxWidth) / 2);
+
+        for (const auto& l : lines) {
+            std::cout << std::string(leftPadding, ' ') << colorText(BWhite, l) << "\n";
+        }
+        std::cout << "\n";
+    }
 }

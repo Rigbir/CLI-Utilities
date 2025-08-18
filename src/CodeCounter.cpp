@@ -3,10 +3,42 @@
 //
 
 #include "CodeCounter.h"
+#include <unordered_set>
 #include <iostream>
 #include <fstream>
 
 namespace fs = std::filesystem;
+
+void CodeCounter::initMap() {
+    languageMap = {
+        {"cpp", { {".h", ".hpp", ".tpp", ".cpp", ".cc", ".cxx"}, "C++"}},
+        {"java", { {".java"}, "Java"}},
+        {"python", { {".py"}, "Python"}},
+        {"js", { {".js", ".jsx"}, "JavaScript"}},
+        {"ts", { {".ts", ".tsx"}, "TypeScript"}},
+        {"cs", { {".cs"}, "C#"}},
+        {"go", { {".go"}, "Go"}},
+        {"rust", { {".rs"}, "Rust"}},
+        {"swift", { {".swift"}, "Swift"}},
+        {"kotlin", { {".kt", ".kts"}, "Kotlin"}},
+        {"php", { {".php"}, "PHP"}},
+        {"ruby", { {".rb"}, "Ruby"}}
+    };
+}
+
+std::string CodeCounter::inputFolder() {
+    std::string folderPath;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cout << '\n' << colorText(BWhite, centered("Write path to project Directory: ", termWidth()));
+    std::getline(std::cin, folderPath);
+
+    if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        std::cout << '\n' << colorText(BRed, centered("Invalid Path.", termWidth()));
+        return "";
+    }
+
+    return folderPath;
+}
 
 size_t CodeCounter::countLine(const std::string& folderPath) {
     std::ifstream file(folderPath);
@@ -22,14 +54,22 @@ size_t CodeCounter::countLine(const std::string& folderPath) {
 }
 
 bool CodeCounter::isIgnorePath(const fs::path& path) {
+    static const std::unordered_set<std::string> ignored = {
+        "cmake-build-debug", ".git", "build", "cmakefiles",
+        ".vscode", ".idea", "node_modules", "__pycache__",
+        "venv", "__pycache__", "site-packages"
+    };
+
     for (auto p : path) {
         std::string folder = toLower(p.filename().string());
-        if (folder == "cmake-build-debug" || folder == ".git" || folder == "build" ||
-            folder == "cmakefiles" || folder == ".vscode" || folder == ".idea" ||
-            folder.find("cmake") != std::string::npos) {
+        if (ignored.contains(folder) || folder.find("cmake") != std::string::npos) {
             return true;
         }
     }
+
+    std::string filename = toLower(path.filename().string());
+    if (filename == "activate_this.py") return true;
+
     return false;
 }
 
@@ -42,7 +82,12 @@ void CodeCounter::execute(const std::vector<std::string>& args) {
         "Code Counter Utility",
         "",
         "Commands:",
-        "  1  - Show project line count",
+        "  1  - Show project (only C++) line count",
+        "  2  - Show project Language line count",
+        "",
+        "Supported Languages:",
+        "  C++, Java, Python, JavaScript, TypeScript,",
+        "  C#, Go, Rust, Swift, Kotlin, PHP, Ruby",
         "",
         "Navigation:",
         "  q, quit - go back to main menu"
@@ -58,21 +103,14 @@ void CodeCounter::execute(const std::vector<std::string>& args) {
 
         switch (std::stoi(input)) {
             case 1: getFolderStats(); break;
+            case 2: getLangStats(); break;
             default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
         }
     }
 }
 
 void CodeCounter::getFolderStats() const {
-    std::string folderPath;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    std::cout << '\n' << colorText(BWhite, centered("Write path to project Directory: ", termWidth()));
-    std::getline(std::cin, folderPath);
-
-    if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
-        std::cout << '\n' << colorText(BRed, centered("Invalid Path.", termWidth()));
-        return;
-    }
+    const std::string folderPath = inputFolder();
 
     std::vector<FileStats> headers;
     std::vector<FileStats> sources;
@@ -81,7 +119,7 @@ void CodeCounter::getFolderStats() const {
     size_t totalSourcesLine = 0;
 
     for (auto& entry : fs::recursive_directory_iterator(folderPath)) {
-        if (!entry.is_regular_file() || isIgnorePath(entry.path().parent_path())) continue;
+        if (!entry.is_regular_file() || isIgnorePath(entry.path())) continue;
 
         auto path = entry.path();
         auto extension = path.extension().string();
@@ -101,4 +139,30 @@ void CodeCounter::getFolderStats() const {
 
     std::cout << '\n';
     printTable(headers, sources, totalHeadersLine, totalSourcesLine);
+}
+
+void CodeCounter::getLangStats() {
+    initMap();
+    const std::string folderPath = inputFolder();
+
+    std::map<std::string, std::vector<FileStats>> filesByLang;
+    std::map<std::string, size_t> totalsByLang;
+
+    for (auto& entry : fs::recursive_directory_iterator(folderPath)) {
+        if (!entry.is_regular_file() || isIgnorePath(entry.path())) continue;
+
+        auto path = entry.path();
+        auto extension = path.extension().string();
+
+        for (const auto& [langKey, config] : languageMap) {
+            if (std::find(config.extension.begin(), config.extension.end(), extension) != config.extension.end()) {
+                const size_t lines = countLine(path);
+                filesByLang[langKey].push_back({path.filename().string(), lines});
+                totalsByLang[langKey] += lines;
+            }
+        }
+    }
+
+    std::cout << '\n';
+    printByLanguage(filesByLang, totalsByLang, languageMap);
 }

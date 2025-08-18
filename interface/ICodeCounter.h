@@ -8,4 +8,5 @@
 class ICodeCounter : public Command {
 public:
     virtual void getFolderStats() const = 0;
+    virtual void getLangStats() = 0;
 };
