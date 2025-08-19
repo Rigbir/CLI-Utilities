@@ -76,6 +76,68 @@ inline void printBox(const std::vector<std::string>& lines) {
               << colorText(BWhite, "┘\n");
 }
 
+inline void printBoxes(const std::vector<std::vector<std::string>>& tables) {
+    const int w = termWidth();
+
+    std::vector<int> widths;
+    widths.reserve(tables.size());
+
+    size_t maxHeight = 0;
+    for (auto& lines : tables) {
+        size_t maxLen = 0;
+        for (auto& s : lines) maxLen = std::max(maxLen, s.size());
+        widths.push_back(static_cast<int>(maxLen));
+        maxHeight = std::max(maxHeight, lines.size());
+    }
+
+    int totalWidth = 0;
+    for (const auto wBox : widths) totalWidth += wBox + 4;
+    totalWidth += (static_cast<int>(tables.size()) - 1) * 2;
+
+    const int left = std::max(0, (w - totalWidth) / 2);
+
+    auto repeat = [](const std::string_view s, const int n) {
+        std::string out;
+        out.reserve(s.size() * n);
+        for (int i = 0; i < n; i++) out += s;
+        return out;
+    };
+
+    std::cout << std::string(left, ' ');
+    for (size_t i = 0; i < tables.size(); i++) {
+        std::cout << colorText(BWhite, "┌")
+                  << colorText(BWhite, repeat("─", widths[i] + 2))
+                  << colorText(BWhite, "┐");
+        if (i + 1 < tables.size()) std::cout << "  ";
+    }
+    std::cout << "\n";
+
+    for (size_t row = 0; row < maxHeight; row++) {
+        std::cout << std::string(left, ' ');
+        for (size_t i = 0; i < tables.size(); i++) {
+            std::string text;
+            if (row < tables[i].size()) text = tables[i][row];
+
+            std::cout << colorText(BWhite, "│ ")
+                      << colorText(BWhite, text)
+                      << std::string(widths[i] - text.size(), ' ')
+                      << colorText(BWhite, " │");
+
+            if (i + 1 < tables.size()) std::cout << "  ";
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << std::string(left, ' ');
+    for (size_t i = 0; i < tables.size(); i++) {
+        std::cout << colorText(BWhite, "└")
+                  << colorText(BWhite, repeat("─", widths[i] + 2))
+                  << colorText(BWhite, "┘");
+        if (i + 1 < tables.size()) std::cout << "  ";
+    }
+    std::cout << "\n";
+}
+
 inline void printTable(const std::vector<FileStats>& headers,
                        const std::vector<FileStats>& sources,
                        const size_t totalHeaders, const size_t totalSources)
@@ -93,7 +155,7 @@ inline void printTable(const std::vector<FileStats>& headers,
         return out;
     };
 
-    auto pad = [repeat](const std::string &s, const int w) {
+    auto pad = [](const std::string &s, const int w) {
         const int contentWidth = std::max(0, w - 2);
         const std::string trimmed = s.substr(0, contentWidth);
         const int rightPad = contentWidth - trimmed.size();

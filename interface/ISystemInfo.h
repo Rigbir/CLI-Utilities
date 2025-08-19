@@ -7,8 +7,7 @@
 
 class ISystemInfo : public Command {
 public:
-    virtual void getSystemInfo() = 0;
-    virtual void getCPUUsage() = 0;
-    virtual void getRAMUsage() = 0;
-    virtual void getDiskUsage() = 0;
+    virtual std::vector<std::string> getCPUUsage() = 0;
+    virtual std::vector<std::string> getRAMUsage() = 0;
+    virtual std::vector<std::string> getDiskUsage() = 0;
 };

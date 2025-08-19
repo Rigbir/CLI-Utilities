@@ -63,8 +63,6 @@ void SystemInfo::execute(const std::vector<std::string>& args) {
         try {
             switch (std::stoi(input)) {
                 case 1: runLiveMonitoring(); break;
-                case 2: getDiskUsage(); break;
-                case 3: getRAMUsage(); break;
                 default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
             }
         } catch (const std::invalid_argument&) {
@@ -85,20 +83,20 @@ void SystemInfo::runLiveMonitoring() {
 
     while (!stopFlag) {
         clearScreen();
-        getCPUUsage();
-        getRAMUsage();
+        for (size_t i = 0; i < 10; ++i) std::cout << '\n';
+
+        auto cpuTable = getCPUUsage();
+        auto ramTable = getRAMUsage();
+        auto diskTable = getDiskUsage();
+        printBoxes({cpuTable, ramTable, diskTable});
+
+        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
+        std::cout << std::flush;
+
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     inputThread.join();
-}
-
-void SystemInfo::getSystemInfo() {
-    // runLiveMonitoring();
-    // getCPUUsage();
-    // getRAMUsage();
-    // getDiskUsage();
-    // getTemperature();
 }
 
 std::tuple<double, double, double> SystemInfo::CPUUsageCalculation(host_cpu_load_info_data_t& curr) {
@@ -126,7 +124,7 @@ std::tuple<double, double, double> SystemInfo::CPUUsageCalculation(host_cpu_load
     return {0, 0, 0};
 }
 
-void SystemInfo::getCPUUsage() {
+std::vector<std::string> SystemInfo::getCPUUsage() {
     host_cpu_load_info_data_t curr = {};
     mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
 
@@ -135,31 +133,22 @@ void SystemInfo::getCPUUsage() {
                                                reinterpret_cast<host_info_t>(&curr),
                                                static_cast<mach_msg_type_number_t*>(&count));
 
-    if (resultCurr == KERN_SUCCESS) {
-        auto [user, system, idle] = CPUUsageCalculation(curr);
-
-        auto toString = [](const double val) {
-            std::ostringstream ss;
-            ss << std::fixed << std::setprecision(2) << val;
-            return ss.str();
-        };
-
-        auto print = [&](const std::string& nameProc, const double parameter)->void {
-            std::cout << '\n' << colorText(BWhite, centered(nameProc + toString(parameter) + " %", termWidth()));
-        };
-
-        print("User: ", user);
-        print("System: ", system);
-        print("Idle: ", idle);
-        //std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
-
-        std::cout << std::flush;
+    if (resultCurr != KERN_SUCCESS) {
+        std::cerr << "host_statistics failed: " << resultCurr << '\n';
     }
 
-    //std::this_thread::sleep_for(std::chrono::seconds(1));
+    auto [user, system, idle] = CPUUsageCalculation(curr);
+
+    return {
+        "RAM Usage:",
+        "",
+        "User:    " + toString(user)   + " %",
+        "System:  " + toString(system) + " %",
+        "Idle:    " + toString(idle)   + " %"
+    };
 }
 
-void SystemInfo::getRAMUsage() {
+std::vector<std::string> SystemInfo::getRAMUsage() {
     mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
     vm_statistics64_data_t vmStats;
     kern_return_t result = host_statistics64(mach_host_self(),
@@ -168,8 +157,7 @@ void SystemInfo::getRAMUsage() {
                                              static_cast<mach_msg_type_number_t*>(&count));
 
     if (result != KERN_SUCCESS) {
-        std::cerr << "host_statistics failed: " << result << "\n";
-        return;
+        std::cerr << "host_statistics failed: " << result << '\n';
     }
 
     unsigned long pageSize;
@@ -186,7 +174,7 @@ void SystemInfo::getRAMUsage() {
     sysctlbyname("hw.memsize", &totalPhys, &len, nullptr, 0);
     const double totalInMac = static_cast<double>(totalPhys);
 
-    const std::vector<std::string> outputTable = {
+    return {
         "RAM Usage:",
         "",
         "Free:          " + toString(bytesToMb(free))       + " MB" + " (" + toString(percent(free, totalInMac))      + "%)",
@@ -196,16 +184,9 @@ void SystemInfo::getRAMUsage() {
         "Total:         " + toString(bytesToMb(totalUsed))  + " MB" + " (" + toString(percent(totalUsed, totalInMac)) + "%)",
         "Total In Mac:  " + toString(bytesToMb(totalInMac)) + " MB" + " (100.00%)"
     };
-
-    std::cout << '\n';
-    printBox(outputTable);
-
-    std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
-    std::cout << std::flush;
-    //std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
-void SystemInfo::getDiskUsage() {
+std::vector<std::string> SystemInfo::getDiskUsage() {
     struct statvfs stats;
     struct statfs statsDisk;
 
@@ -217,7 +198,7 @@ void SystemInfo::getDiskUsage() {
 
         const double totalPercent = totalBytes > 0 ? (bytesToGb(totalBytes) / bytesToGB(totalInMac)) * 100.0 : 0.0;
 
-        const std::vector<std::string> outputTable = {
+        return {
             "Disk Usage:",
             "",
             "User:          " + toString(bytesToGb(usedBytes))      + " GB" + " (" + toString(percent(usedBytes, totalBytes))      + "%)",
@@ -225,8 +206,6 @@ void SystemInfo::getDiskUsage() {
             "Total:         " + toString(bytesToGb(totalBytes))     + " GB" + " (" + toString(totalPercent)                                + "%)",
             "Total In Mac:  " + toString(bytesToGB(totalInMac))     + " GB" + " (" + toString(100.0)                                   + "%)"
         };
-
-        std::cout << '\n';
-        printBox(outputTable);
     }
+    return {};
 }

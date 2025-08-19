@@ -10,10 +10,9 @@
 class SystemInfo final : public ISystemInfo {
 public:
     void execute(const std::vector<std::string>& args) override;
-    void getSystemInfo() override;
-    void getCPUUsage() override;
-    void getRAMUsage() override;
-    void getDiskUsage() override;
+    std::vector<std::string> getCPUUsage() override;
+    std::vector<std::string> getRAMUsage() override;
+    std::vector<std::string> getDiskUsage() override;
 
 private:
     void runLiveMonitoring();
