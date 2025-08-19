@@ -84,22 +84,24 @@ static void showHelp() {
         "  cleaner      - Cleaner utilities",
         "  codecounter  - Project Line Counter utilities",
         "  wifi         - Wi-Fi monitoring",
+        "  system       - System processes monitoring",
         "  device       - USB / Audio / Display watcher",
         "",
         "Usage:",
-        "  ./app <command>",
-        "  ./app # open interactive menu",
+        "  app <command>",
+        "  app # open interactive menu",
         "",
         "Navigation:",
         "  h, help  - show this help",
         "  q, quit  - exit the app",
         "",
         "Examples:",
-        "  ./app battery",
-        "  ./app cleaner",
-        "  ./app codecounter",
-        "  ./app wifi",
-        "  ./app device"
+        "  app battery",
+        "  app cleaner",
+        "  app codecounter",
+        "  app system",
+        "  app wifi",
+        "  app device"
     };
 
     printBox(lines);

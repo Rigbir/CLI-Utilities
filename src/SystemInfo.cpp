@@ -140,7 +140,7 @@ std::vector<std::string> SystemInfo::getCPUUsage() {
     auto [user, system, idle] = CPUUsageCalculation(curr);
 
     return {
-        "RAM Usage:",
+        "CPU Usage:",
         "",
         "User:    " + toString(user)   + " %",
         "System:  " + toString(system) + " %",
@@ -181,6 +181,7 @@ std::vector<std::string> SystemInfo::getRAMUsage() {
         "Active:        " + toString(bytesToMb(active))     + " MB" + " (" + toString(percent(active, totalInMac))    + "%)",
         "Inactive:      " + toString(bytesToMb(inactive))   + " MB" + " (" + toString(percent(inactive, totalInMac))  + "%)",
         "Wired:         " + toString(bytesToMb(wired))      + " MB" + " (" + toString(percent(wired, totalInMac))     + "%)",
+        "",
         "Total:         " + toString(bytesToMb(totalUsed))  + " MB" + " (" + toString(percent(totalUsed, totalInMac)) + "%)",
         "Total In Mac:  " + toString(bytesToMb(totalInMac)) + " MB" + " (100.00%)"
     };
@@ -203,6 +204,9 @@ std::vector<std::string> SystemInfo::getDiskUsage() {
             "",
             "User:          " + toString(bytesToGb(usedBytes))      + " GB" + " (" + toString(percent(usedBytes, totalBytes))      + "%)",
             "Available:     " + toString(bytesToGb(availableBytes)) + " GB" + " (" + toString(percent(availableBytes, totalBytes)) + "%)",
+            "",
+            "",
+            "",
             "Total:         " + toString(bytesToGb(totalBytes))     + " GB" + " (" + toString(totalPercent)                                + "%)",
             "Total In Mac:  " + toString(bytesToGB(totalInMac))     + " GB" + " (" + toString(100.0)                                   + "%)"
         };
