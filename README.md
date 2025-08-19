@@ -18,13 +18,21 @@ A set of command-line tools for `macOS` that helps monitor system state and perf
     - Analyzes project files across `C++, Python, Java, JavaScript, and more`
     - Groups results by language and file type
 
-4. **Wi-Fi Monitoring**
+4. **Device Monitoring**
+   - Tracks `USB drives`, `Headphones`, and `external monitors` when plugged/unplugged
+   - Sends notifications directly to the `terminal`
+
+5. **System Monitoring**
+
+   - **Live Monitoring:** `CPU`, `RAM`, `Disk`
+     - **CPU Usage:** User, System, Idle %
+     - **RAM Usage:** Free, Active, Inactive, Wired, Total MB/%
+     - **Disk Usage:** Used, Available, Total GB/%
+
+6. **Wi-Fi Monitoring**
     - Lists all known networks
     - Shows current speed and signal strength
 
-5. **Device Monitoring**
-    - Tracks `USB drives`, `Headphones`, and `external monitors` when plugged/unplugged
-    - Sends notifications directly to the `terminal`
 
 ---
 

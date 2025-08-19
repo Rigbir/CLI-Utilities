@@ -83,9 +83,9 @@ static void showHelp() {
         "  battery      - Battery monitoring tools",
         "  cleaner      - Cleaner utilities",
         "  codecounter  - Project Line Counter utilities",
-        "  wifi         - Wi-Fi monitoring",
-        "  system       - System processes monitoring",
         "  device       - USB / Audio / Display watcher",
+        "  system       - System processes monitoring",
+        "  wifi         - Wi-Fi monitoring",
         "",
         "Usage:",
         "  app <command>",
@@ -99,9 +99,9 @@ static void showHelp() {
         "  app battery",
         "  app cleaner",
         "  app codecounter",
+        "  app device",
         "  app system",
-        "  app wifi",
-        "  app device"
+        "  app wifi"
     };
 
     printBox(lines);
