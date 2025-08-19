@@ -14,12 +14,16 @@ public:
     void getCPUUsage() override;
     void getRAMUsage() override;
     void getDiskUsage() override;
-    void getTemperature() override;
 
 private:
     void runLiveMonitoring();
 
+    static double bytesToMb(double bytes);
+    static double bytesToGb(double bytes);
+    static double bytesToGB(double bytes);
+    static double percent(double val, double total);
+    static std::string toString(double val);
+
     host_cpu_load_info_data_t prev = {};
     std::tuple<double, double, double> CPUUsageCalculation(host_cpu_load_info_data_t& curr);
-
 };

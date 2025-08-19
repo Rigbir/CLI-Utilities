@@ -11,7 +11,31 @@
 #include <atomic>
 #include <mach/mach.h>
 #include <mach/mach_host.h>
+#include <sys/sysctl.h>
 #include <sys/statvfs.h>
+#include <sys/mount.h>
+
+double SystemInfo::bytesToMb(const double bytes) {
+    return bytes / (1024.0 * 1024.0);
+}
+
+double SystemInfo::bytesToGb(const double bytes) {
+    return bytes / (1024.0 * 1024.0 * 1024.0);
+}
+
+double SystemInfo::bytesToGB(const double bytes) {
+    return bytes / 1e9;
+}
+
+double SystemInfo::percent(const double val, const double total) {
+    return val > 0 ? (val / total) * 100 : 0.0;
+}
+
+std::string SystemInfo::toString(const double val) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(2) << val;
+    return ss.str();
+}
 
 void SystemInfo::execute(const std::vector<std::string>& args) {
     (void) args;
@@ -60,15 +84,18 @@ void SystemInfo::runLiveMonitoring() {
     });
 
     while (!stopFlag) {
+        clearScreen();
         getCPUUsage();
+        getRAMUsage();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     inputThread.join();
 }
 
 void SystemInfo::getSystemInfo() {
-    //runLiveMonitoring();
-    //getCPUUsage();
+    // runLiveMonitoring();
+    // getCPUUsage();
     // getRAMUsage();
     // getDiskUsage();
     // getTemperature();
@@ -100,8 +127,6 @@ std::tuple<double, double, double> SystemInfo::CPUUsageCalculation(host_cpu_load
 }
 
 void SystemInfo::getCPUUsage() {
-    clearScreen();
-
     host_cpu_load_info_data_t curr = {};
     mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
 
@@ -126,12 +151,12 @@ void SystemInfo::getCPUUsage() {
         print("User: ", user);
         print("System: ", system);
         print("Idle: ", idle);
-        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
+        //std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
 
         std::cout << std::flush;
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    //std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void SystemInfo::getRAMUsage() {
@@ -150,66 +175,58 @@ void SystemInfo::getRAMUsage() {
     unsigned long pageSize;
     host_page_size(mach_host_self(), &pageSize);
 
-    const double free = static_cast<double>(vmStats.free_count) * pageSize;
-    const double active = static_cast<double>(vmStats.active_count) * pageSize;
+    const double free =     static_cast<double>(vmStats.free_count)     * pageSize;
+    const double active =   static_cast<double>(vmStats.active_count)   * pageSize;
     const double inactive = static_cast<double>(vmStats.inactive_count) * pageSize;
-    const double wired = static_cast<double>(vmStats.wire_count) * pageSize;
-    const double total = free + active + inactive + wired;
+    const double wired =    static_cast<double>(vmStats.wire_count)     * pageSize;
+    const double totalUsed = free + active + inactive + wired;
 
-    auto bytesToMb = [&](const double bytes) {
-        return bytes / (1024.0 * 1024.0);
+    uint64_t totalPhys = 0;
+    size_t len = sizeof(totalPhys);
+    sysctlbyname("hw.memsize", &totalPhys, &len, nullptr, 0);
+    const double totalInMac = static_cast<double>(totalPhys);
+
+    const std::vector<std::string> outputTable = {
+        "RAM Usage:",
+        "",
+        "Free:          " + toString(bytesToMb(free))       + " MB" + " (" + toString(percent(free, totalInMac))      + "%)",
+        "Active:        " + toString(bytesToMb(active))     + " MB" + " (" + toString(percent(active, totalInMac))    + "%)",
+        "Inactive:      " + toString(bytesToMb(inactive))   + " MB" + " (" + toString(percent(inactive, totalInMac))  + "%)",
+        "Wired:         " + toString(bytesToMb(wired))      + " MB" + " (" + toString(percent(wired, totalInMac))     + "%)",
+        "Total:         " + toString(bytesToMb(totalUsed))  + " MB" + " (" + toString(percent(totalUsed, totalInMac)) + "%)",
+        "Total In Mac:  " + toString(bytesToMb(totalInMac)) + " MB" + " (100.00%)"
     };
 
-    auto toString = [](const double val) {
-        std::ostringstream ss;
-        ss << std::fixed << std::setprecision(2) << val;
-        return ss.str();
-    };
+    std::cout << '\n';
+    printBox(outputTable);
 
-    auto print = [&](const std::string& name, const double value) {
-        std::cout << '\n' << colorText(BWhite, centered(name + toString(bytesToMb(value)) + "Mb", termWidth()));
-    };
-
-    print("Total: ", total);
-    print("Free: ", free);
-    print("Active: ", active);
-    print("Inactive: ", inactive);
-    print("Wired: ", wired);
-
+    std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
+    std::cout << std::flush;
+    //std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void SystemInfo::getDiskUsage() {
     struct statvfs stats;
+    struct statfs statsDisk;
 
-    if (statvfs("/", &stats) == 0) {
-        const double totalBytes = static_cast<double>(stats.f_blocks) * stats.f_frsize;
-        const double availableBytes = static_cast<double>(stats.f_bavail) * stats.f_frsize;
-        const double usedBytes = totalBytes - availableBytes;
+    if (statvfs("/", &stats) == 0 && statfs("/", &statsDisk) == 0) {
+        const double totalInMac =       static_cast<double>(statsDisk.f_blocks) * statsDisk.f_bsize;
+        const double totalBytes =       static_cast<double>(stats.f_blocks) * stats.f_frsize;
+        const double availableBytes =   static_cast<double>(stats.f_bavail) * stats.f_frsize;
+        const double usedBytes =        totalBytes - availableBytes;
 
-        const double usedPercent = usedBytes > 0 ? (usedBytes / totalBytes) * 100.0 : 0.0;
-        const double availablePercent = availableBytes > 0 ? (availableBytes / totalBytes) * 100.0 : 0.0;
+        const double totalPercent = totalBytes > 0 ? (bytesToGb(totalBytes) / bytesToGB(totalInMac)) * 100.0 : 0.0;
 
-        auto bytesToGb = [&](const double bytes) {
-            return bytes / (1024.0 * 1024.0 * 1024.0);
+        const std::vector<std::string> outputTable = {
+            "Disk Usage:",
+            "",
+            "User:          " + toString(bytesToGb(usedBytes))      + " GB" + " (" + toString(percent(usedBytes, totalBytes))      + "%)",
+            "Available:     " + toString(bytesToGb(availableBytes)) + " GB" + " (" + toString(percent(availableBytes, totalBytes)) + "%)",
+            "Total:         " + toString(bytesToGb(totalBytes))     + " GB" + " (" + toString(totalPercent)                                + "%)",
+            "Total In Mac:  " + toString(bytesToGB(totalInMac))     + " GB" + " (" + toString(100.0)                                   + "%)"
         };
 
-        auto toString = [](const double val) {
-            std::ostringstream ss;
-            ss << std::fixed << std::setprecision(2) << val;
-            return ss.str();
-        };
-
-        auto print = [&](const std::string& name, const double value, const double percent) {
-            std::cout << '\n' << colorText(BWhite, centered(name + toString(bytesToGb(value)) + "Gb" + " (" + toString(percent) + "%)", termWidth()));
-        };
-
-        print("Total: ", totalBytes, 100.0);
-        print("Used: ", usedBytes, usedPercent);
-        print("Available: ", availableBytes, availablePercent);
+        std::cout << '\n';
+        printBox(outputTable);
     }
 }
-
-void SystemInfo::getTemperature() {
-
-}
-

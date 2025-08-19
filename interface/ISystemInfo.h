@@ -11,5 +11,4 @@ public:
     virtual void getCPUUsage() = 0;
     virtual void getRAMUsage() = 0;
     virtual void getDiskUsage() = 0;
-    virtual void getTemperature() = 0;
 };
