@@ -7,9 +7,9 @@
 
 class ISystemInfo : public Command {
 public:
-    virtual void getSystemInfo() const = 0;
-    virtual void getCPUUsage() const = 0;
-    virtual void getRAMUsage() const = 0;
-    virtual void getDiskUsage() const = 0;
-    virtual void getTemperature() const = 0;
+    virtual void getSystemInfo() = 0;
+    virtual void getCPUUsage() = 0;
+    virtual void getRAMUsage() = 0;
+    virtual void getDiskUsage() = 0;
+    virtual void getTemperature() = 0;
 };

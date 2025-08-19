@@ -4,6 +4,7 @@
 #include "DeviceWatcher.h"
 #include "WifiMonitor.h"
 #include "CodeCounter.h"
+#include "SystemInfo.h"
 
 #include <iostream>
 #include <string>
@@ -115,6 +116,7 @@ int main(const int argc, const char* argv[]) {
     commands["wifi"]    = std::make_unique<WifiMonitor>();
     commands["device"]  = std::make_unique<DeviceWatcher>();
     commands["codecounter"] = std::make_unique<CodeCounter>();
+    commands["system"] = std::make_unique<SystemInfo>();
 
     if (argc > 1) {
         const std::string cmd = argv[1];
