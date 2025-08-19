@@ -9,6 +9,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include <mach/mach.h>
 #include <mach/mach_host.h>
 #include <sys/statvfs.h>
 
@@ -39,13 +40,13 @@ void SystemInfo::execute(const std::vector<std::string>& args) {
             switch (std::stoi(input)) {
                 case 1: runLiveMonitoring(); break;
                 case 2: getDiskUsage(); break;
+                case 3: getRAMUsage(); break;
                 default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
             }
         } catch (const std::invalid_argument&) {
             std::cout << '\n' << colorText(BRed, centered("Please enter a number!\n", termWidth()));
         }
     }
-
 }
 
 void SystemInfo::runLiveMonitoring() {
@@ -118,13 +119,13 @@ void SystemInfo::getCPUUsage() {
             return ss.str();
         };
 
-        auto print = [&](std::ostream& oss, const std::string& nameProc, const double parameter)->void {
-            oss << '\n' << colorText(BWhite, centered(nameProc + toString(parameter) + " %", termWidth()));
+        auto print = [&](const std::string& nameProc, const double parameter)->void {
+            std::cout << '\n' << colorText(BWhite, centered(nameProc + toString(parameter) + " %", termWidth()));
         };
 
-        print(std::cout, "User: ", user);
-        print(std::cout, "System: ", system);
-        print(std::cout, "Idle: ", idle);
+        print("User: ", user);
+        print("System: ", system);
+        print("Idle: ", idle);
         std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
 
         std::cout << std::flush;
@@ -134,15 +135,51 @@ void SystemInfo::getCPUUsage() {
 }
 
 void SystemInfo::getRAMUsage() {
+    mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+    vm_statistics64_data_t vmStats;
+    kern_return_t result = host_statistics64(mach_host_self(),
+                                             HOST_VM_INFO64,
+                                             reinterpret_cast<host_info64_t>(&vmStats),
+                                             static_cast<mach_msg_type_number_t*>(&count));
+
+    if (result != KERN_SUCCESS) {
+        std::cerr << "host_statistics failed: " << result << "\n";
+        return;
+    }
+
+    unsigned long pageSize;
+    host_page_size(mach_host_self(), &pageSize);
+
+    const double free = static_cast<double>(vmStats.free_count) * pageSize;
+    const double active = static_cast<double>(vmStats.active_count) * pageSize;
+    const double inactive = static_cast<double>(vmStats.inactive_count) * pageSize;
+    const double wired = static_cast<double>(vmStats.wire_count) * pageSize;
+    const double total = free + active + inactive + wired;
+
+    auto bytesToMb = [&](const double bytes) {
+        return bytes / (1024.0 * 1024.0);
+    };
+
+    auto toString = [](const double val) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(2) << val;
+        return ss.str();
+    };
+
+    auto print = [&](const std::string& name, const double value) {
+        std::cout << '\n' << colorText(BWhite, centered(name + toString(bytesToMb(value)) + "Mb", termWidth()));
+    };
+
+    print("Total: ", total);
+    print("Free: ", free);
+    print("Active: ", active);
+    print("Inactive: ", inactive);
+    print("Wired: ", wired);
 
 }
 
 void SystemInfo::getDiskUsage() {
     struct statvfs stats;
-
-    auto bytesToGb = [&](const double bytes) {
-        return bytes / (1024.0 * 1024.0 * 1024.0);
-    };
 
     if (statvfs("/", &stats) == 0) {
         const double totalBytes = static_cast<double>(stats.f_blocks) * stats.f_frsize;
@@ -152,19 +189,23 @@ void SystemInfo::getDiskUsage() {
         const double usedPercent = usedBytes > 0 ? (usedBytes / totalBytes) * 100.0 : 0.0;
         const double availablePercent = availableBytes > 0 ? (availableBytes / totalBytes) * 100.0 : 0.0;
 
+        auto bytesToGb = [&](const double bytes) {
+            return bytes / (1024.0 * 1024.0 * 1024.0);
+        };
+
         auto toString = [](const double val) {
             std::ostringstream ss;
             ss << std::fixed << std::setprecision(2) << val;
             return ss.str();
         };
 
-        auto print = [&](std::ostream& oss, const std::string& name, const double value, const double percent) {
-            oss << '\n' << colorText(BWhite, centered(name + toString(value) + "Gb" + " (" + toString(percent) + "%)", termWidth()));
+        auto print = [&](const std::string& name, const double value, const double percent) {
+            std::cout << '\n' << colorText(BWhite, centered(name + toString(bytesToGb(value)) + "Gb" + " (" + toString(percent) + "%)", termWidth()));
         };
 
-        print(std::cout, "      Total: ", bytesToGb(totalBytes), 100.0);
-        print(std::cout, "      Used: ", bytesToGb(usedBytes), usedPercent);
-        print(std::cout, "Available: ", bytesToGb(availableBytes), availablePercent);
+        print("Total: ", totalBytes, 100.0);
+        print("Used: ", usedBytes, usedPercent);
+        print("Available: ", availableBytes, availablePercent);
     }
 }
 
