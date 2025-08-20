@@ -37,6 +37,30 @@ std::string SystemInfo::toString(const double val) {
     return ss.str();
 }
 
+std::string SystemInfo::getMacVersion(const char* name) {
+    char buf[256];
+    size_t size = sizeof(buf);
+    if (sysctlbyname(name, buf, &size, nullptr, 0) == 0) {
+        return std::string(buf, size - 1);
+    }
+    return {};
+}
+
+std::string SystemInfo::getMacName() {
+    FILE* pipe = popen("sw_vers -productName", "r");
+    if (!pipe) return {};
+    char buf[128];
+    std::string result;
+    while (fgets(buf, sizeof(buf), pipe)) {
+        result += buf;
+    }
+    pclose(pipe);
+    if (!result.empty() && result.back() == '\n') {
+        result.pop_back();
+    }
+    return result;
+}
+
 void SystemInfo::execute(const std::vector<std::string>& args) {
     (void) args;
     clearScreen();
@@ -52,6 +76,9 @@ void SystemInfo::execute(const std::vector<std::string>& args) {
         "  q, quit - go back to main menu"
     };
     printBox(systemInfo);
+
+    productName = getMacName();
+    productVersion = getMacVersion("kern.osproductversion");
 
     std::string input;
     while (true) {
@@ -83,7 +110,9 @@ void SystemInfo::runLiveMonitoring() {
 
     while (!stopFlag) {
         clearScreen();
-        for (size_t i = 0; i < 10; ++i) std::cout << '\n';
+        for (size_t i = 0; i < 9; ++i) std::cout << '\n';
+        std::cout << colorText(BWhite, centered("Product Name: "     + productName +
+                                                       "   Product Version: " + productVersion, termWidth())) << "\n\n";
 
         auto cpuTable = getCPUUsage();
         auto ramTable = getRAMUsage();

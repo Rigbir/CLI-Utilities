@@ -22,7 +22,11 @@ private:
     static double bytesToGB(double bytes);
     static double percent(double val, double total);
     static std::string toString(double val);
+    static std::string getMacVersion(const char* name);
+    static std::string getMacName();
 
+    std::string productName;
+    std::string productVersion;
     host_cpu_load_info_data_t prev = {};
     std::tuple<double, double, double> CPUUsageCalculation(host_cpu_load_info_data_t& curr);
 };
