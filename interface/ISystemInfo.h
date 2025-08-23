@@ -10,4 +10,5 @@ public:
     virtual std::vector<std::string> getCPUUsage() = 0;
     virtual std::vector<std::string> getRAMUsage() = 0;
     virtual std::vector<std::string> getDiskUsage() = 0;
+    virtual void topByCpuRam() = 0;
 };

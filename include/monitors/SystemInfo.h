@@ -13,9 +13,11 @@ public:
     std::vector<std::string> getCPUUsage() override;
     std::vector<std::string> getRAMUsage() override;
     std::vector<std::string> getDiskUsage() override;
+    void topByCpuRam() override;
 
 private:
     void runLiveMonitoring();
+    void runProcessMonitoring();
 
     static double bytesToMb(double bytes);
     static double bytesToGb(double bytes);
@@ -29,4 +31,8 @@ private:
     std::string productVersion;
     host_cpu_load_info_data_t prev = {};
     std::tuple<double, double, double> CPUUsageCalculation(host_cpu_load_info_data_t& curr);
+
+    int limits;
+    static std::string shortPath(const std::string& path);
+    static std::string getCommand(const std::string& command);
 };

@@ -143,9 +143,10 @@ inline void printTable(const std::vector<FileStats>& headers,
                        const size_t totalHeaders, const size_t totalSources)
 {
     const int headerColWidth = std::max(7, static_cast<int>(std::max_element(headers.begin(), headers.end(),
-                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5 + 6);
+                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5 + 7);
     const int sourceColWidth = std::max(7, static_cast<int>(std::max_element(sources.begin(), sources.end(),
-                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5 + 6);
+                                                                             [](auto &a, auto &b) { return a.name.size() < b.name.size(); })->name.size()) + 5 + 7);
+
     const int tableWidth = headerColWidth + sourceColWidth + 3 + 2;
     const int leftPadding = std::max(0, (termWidth() - tableWidth) / 2);
 
@@ -181,6 +182,7 @@ inline void printTable(const std::vector<FileStats>& headers,
     for (size_t i = 0; i < rows; ++i) {
         std::string h = (i < headers.size()) ? headers[i].name + " - " + std::to_string(headers[i].lines) : "";
         std::string s = (i < sources.size()) ? sources[i].name + " - " + std::to_string(sources[i].lines) : "";
+
         if (h.empty() && s.empty()) continue;
 
         std::cout << std::string(leftPadding, ' ')
@@ -253,7 +255,7 @@ inline void printByLanguage(const std::map<std::string, std::vector<FileStats>>&
         size_t langTotal = 0;
         auto it = totalsByLang.find(langKey);
         if (it != totalsByLang.end()) langTotal = it->second;
-        lines.push_back(" └ Overall: " + std::to_string(langTotal));
+        lines.push_back(" └ Overall lines: " + std::to_string(langTotal));
 
         int maxWidth = 0;
         for (const auto& l : lines) maxWidth = std::max(maxWidth, static_cast<int>(l.size()));
@@ -264,4 +266,106 @@ inline void printByLanguage(const std::map<std::string, std::vector<FileStats>>&
         }
         std::cout << "\n";
     }
+}
+
+inline int utf8Length(const std::string& s) {
+    int count = 0;
+    for (size_t i = 0; i < s.size();) {
+        unsigned char c = s[i];
+        if      ((c & 0x80) == 0) i += 1;
+        else if ((c & 0xE0) == 0xC0) i += 2;
+        else if ((c & 0xF0) == 0xE0) i += 3;
+        else if ((c & 0xF8) == 0xF0) i += 4;
+        else i += 1;
+        count++;
+    }
+    return count;
+}
+
+inline std::string pad(const std::string& s, int w, bool rightAlign) {
+    const int len = utf8Length(s);
+    if (len >= w) return s;
+    const int spaces = w - len;
+    if (rightAlign)
+        return std::string(spaces, ' ') + s;
+    else
+        return s + std::string(spaces, ' ');
+}
+
+inline void printProcessTable(const std::vector<std::vector<std::string>>& rows) {
+    if (rows.empty()) return;
+
+    size_t colCount = 0;
+    for (const auto& r : rows) colCount = std::max(colCount, r.size());
+    if (colCount == 0) return;
+
+    std::vector<int> colWidths(colCount, 0);
+    for (const auto& r : rows) {
+        for (size_t c = 0; c < colCount; ++c) {
+            const std::string cell = (c < r.size()) ? r[c] : std::string();
+            int w = utf8Length(cell);
+            if (w > colWidths[c]) colWidths[c] = w;
+        }
+    }
+    for (auto& w : colWidths) w = std::max(w, 3);
+
+    auto repeat = [](const std::string& s, int n) {
+        std::string out;
+        for (int i = 0; i < n; i++) out += s;
+        return out;
+    };
+
+    const int innerWidth = [&]{
+        int sum = 0;
+        for (auto w : colWidths) sum += w + 2;
+        return sum + (colCount - 1);
+    }();
+    const int leftPadding = std::max(0, (termWidth() - (innerWidth + 2)) / 2);
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "┌");
+    for (size_t c = 0; c < colCount; ++c) {
+        std::cout << colorText(BWhite, repeat("─", colWidths[c] + 2));
+        if (c + 1 < colCount) std::cout << colorText(BWhite, "┬");
+    }
+    std::cout << colorText(BWhite, "┐\n");
+
+    std::cout << std::string(leftPadding, ' ') << colorText(BWhite, "│");
+    for (size_t c = 0; c < colCount; ++c) {
+        const std::string cell = (c < rows[0].size()) ? rows[0][c] : "";
+        std::string padded = pad(cell, colWidths[c], false);
+        std::cout << colorText(BWhite, " ")
+                  << colorText(BWhite, padded)
+                  << colorText(BWhite, " ");
+        if (c + 1 < colCount) std::cout << colorText(BWhite, "│");
+    }
+    std::cout << colorText(BWhite, "│\n");
+
+    std::cout << std::string(leftPadding, ' ') << colorText(BWhite, "├");
+    for (size_t c = 0; c < colCount; ++c) {
+        std::cout << colorText(BWhite, repeat("─", colWidths[c] + 2));
+        if (c + 1 < colCount) std::cout << colorText(BWhite, "┼");
+    }
+    std::cout << colorText(BWhite, "┤\n");
+
+    for (size_t r = 1; r < rows.size(); ++r) {
+        std::cout << std::string(leftPadding, ' ') << colorText(BWhite, "│");
+        for (size_t c = 0; c < colCount; ++c) {
+            const std::string cell = (c < rows[r].size()) ? rows[r][c] : "";
+            std::string padded = pad(cell, colWidths[c], false);
+            std::cout << colorText(BWhite, " ")
+                      << colorText(BWhite, padded)
+                      << colorText(BWhite, " ");
+            if (c + 1 < colCount) std::cout << colorText(BWhite, "│");
+        }
+        std::cout << colorText(BWhite, "│\n");
+    }
+
+    std::cout << std::string(leftPadding, ' ')
+              << colorText(BWhite, "└");
+    for (size_t c = 0; c < colCount; ++c) {
+        std::cout << colorText(BWhite, repeat("─", colWidths[c] + 2));
+        if (c + 1 < colCount) std::cout << colorText(BWhite, "┴");
+    }
+    std::cout << colorText(BWhite, "┘\n");
 }

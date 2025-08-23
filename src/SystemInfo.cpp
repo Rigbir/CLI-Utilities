@@ -71,6 +71,7 @@ void SystemInfo::execute(const std::vector<std::string>& args) {
         "",
         "Commands:",
         "  1  - Show CPU, RAM, Disk usages",
+        "  2  - Process monitoring (top by CPU/RAM)",
         "",
         "Navigation:",
         "  q, quit - go back to main menu"
@@ -90,6 +91,7 @@ void SystemInfo::execute(const std::vector<std::string>& args) {
         try {
             switch (std::stoi(input)) {
                 case 1: runLiveMonitoring(); break;
+                case 2: runProcessMonitoring(); break;
                 default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
             }
         } catch (const std::invalid_argument&) {
@@ -123,6 +125,40 @@ void SystemInfo::runLiveMonitoring() {
         std::cout << std::flush;
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    inputThread.join();
+}
+
+void SystemInfo::runProcessMonitoring() {
+    std::cout << '\n' << colorText(BWhite, centered("Enter count of process: ", termWidth()));
+    std::cin >> limits;
+    if (limits <= 0) {
+        std::cout << colorText(BRed, "Invalid process count!\n");
+        return;
+    }
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    std::atomic<bool> stopFlag = false;
+    std::thread inputThread([&stopFlag]() {
+        std::string line;
+        while (!stopFlag) {
+            std::getline(std::cin, line);
+            if (line == "q" || line == "quit") stopFlag = true;
+        }
+    });
+
+    while (!stopFlag) {
+        clearScreen();
+        for (size_t i = 0; i < 9; ++i) std::cout << '\n';
+        std::cout << colorText(BWhite, centered("Product Name: "     + productName +
+                                                       "   Product Version: " + productVersion, termWidth())) << "\n\n";
+
+        topByCpuRam();
+        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
+        std::cout << std::flush;
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
     inputThread.join();
@@ -241,4 +277,91 @@ std::vector<std::string> SystemInfo::getDiskUsage() {
         };
     }
     return {};
+}
+
+void SystemInfo::topByCpuRam() {
+    const std::string command = "ps axo pcpu,pmem,comm | sort -k 1 -nr | head -n " + std::to_string(limits);
+    const std::string output = getCommand(command);
+
+    if (output.empty()) {
+        std::cout << '\n' << colorText(BRed, "Error executing command or empty result.");
+        return;
+    }
+
+    std::istringstream outputStream(output);
+    std::string line;
+
+    std::vector<std::vector<std::string>> outputTable;
+    outputTable.push_back({"№", "CPU %", "RAM %", "Command"});
+
+    int i = 1;
+    while (std::getline(outputStream, line)) {
+        std::istringstream iss(line);
+        std::string cpuStr, ramStr, comName;
+
+        if (iss >> cpuStr >> ramStr) {
+            std::getline(iss, comName);
+            if (!comName.empty() && comName[0] == ' ') comName.erase(0, 1);
+
+            outputTable.push_back({
+                std::to_string(i),
+                (std::ostringstream() << std::fixed << std::setprecision(1) << std::stod(cpuStr)).str(),
+                (std::ostringstream() << std::fixed << std::setprecision(1) << std::stod(ramStr)).str(),
+                shortPath(comName)
+            });
+            ++i;
+        }
+    }
+
+    std::cout << '\n';
+    printProcessTable(outputTable);
+}
+
+std::string SystemInfo::getCommand(const std::string& command) {
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe) {
+        std::cerr << '\n' << colorText(BRed, "Unable to execute command.");
+        return "";
+    }
+
+    char buf[256];
+    std::ostringstream result;
+
+    while (fgets(buf, sizeof(buf), pipe) != nullptr) {
+        result << buf;
+    }
+    pclose(pipe);
+
+    return result.str();
+}
+
+std::string SystemInfo::shortPath(const std::string& path) {
+    if (path.empty()) return "";
+
+    std::string startPart, endPart;
+
+    int segment = 0;
+    size_t i = 0;
+    for (; i < path.size(); ++i) {
+        startPart += path[i];
+        if (path[i] == '/') ++segment;
+        if (segment == 3) {
+            ++i;
+            break;
+        }
+    }
+
+    int pos = path.size();
+    for (size_t j = path.size() - 1; j > i; --j) {
+        endPart += path[j];
+        if (path[j] == '/') --segment;
+        if (segment == 2) {
+            pos = j;
+            break;
+        }
+    }
+
+    endPart = path.substr(pos);
+
+    return startPart + "..." + endPart;
 }
