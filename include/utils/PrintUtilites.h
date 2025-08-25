@@ -36,6 +36,70 @@ inline std::string toLower(std::string s) {
     return s;
 }
 
+inline size_t utf8VisibleLenNoANSI(const std::string_view& s) {
+    size_t n = 0;
+    for (size_t i = 0; i < s.size();) {
+        const unsigned char c = static_cast<unsigned char>(s[i]);
+
+        if (c == 0x1B) {
+            ++i;
+            if (i < s.size()) {
+                const unsigned char t = static_cast<unsigned char>(s[i]);
+                if (t == '[') {
+                    ++i;
+                    while (i < s.size()) {
+                        const unsigned char d = static_cast<unsigned char>(s[i++]);
+                        if (d >= 0x40 && d <= 0x7E) break;
+                    }
+                    continue;
+                } else if (t == ']') {
+                    ++i;
+                    while (i < s.size()) {
+                        const unsigned char d = static_cast<unsigned char>(s[i]);
+                        if (d == 0x07) { ++i; break; }
+                        if (d == 0x1B && i + 1 < s.size() && s[i + 1] == '\\') { i += 2; break; }
+                        ++i;
+                    }
+                    continue;
+                } else {
+                    ++i;
+                    continue;
+                }
+            }
+            continue;
+        }
+
+        if ((c & 0x80) == 0x00) {
+            ++n; ++i;
+        } else if ((c & 0xE0) == 0xC0) {
+            ++n; i += 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            ++n; i += 3;
+        } else if ((c & 0xF8) == 0xF0) {
+            ++n; i += 4;
+        } else {
+            ++i;
+        }
+    }
+    return n;
+}
+
+inline void printCenteredBlock(const std::vector<std::string>& colored,
+                               const std::vector<std::string>& plain,
+                               const int termW) {
+
+    size_t maxLen = 0;
+    for (const auto& p : plain) {
+        maxLen = std::max(maxLen, utf8VisibleLenNoANSI(p));
+    }
+    const int leftPad = std::max(0, (termW - static_cast<int>(maxLen)) / 2);
+    const std::string margin(leftPad, ' ');
+
+    for (const auto& line : colored) {
+        std::cout << margin << line << "\n\n";
+    }
+}
+
 inline void printBox(const std::vector<std::string>& lines) {
     const int w = termWidth();
 
