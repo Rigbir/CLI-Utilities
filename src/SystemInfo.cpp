@@ -177,7 +177,7 @@ void SystemInfo::runProcessMonitoring() {
         std::cout << "\n\n" << colorText(BWhite, centered("Input process number to kill or 'q' to quit:", termWidth())) << '\n';
         std::cout << std::flush;
 
-        std::this_thread::sleep_for(std::chrono::seconds(4));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     inputThread.join();

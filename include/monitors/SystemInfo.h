@@ -32,7 +32,7 @@ private:
     host_cpu_load_info_data_t prev = {};
     std::tuple<double, double, double> CPUUsageCalculation(host_cpu_load_info_data_t& curr);
 
-    int limits;
+    int limits = 0;
     std::map<int, int> idProcess;
     static std::string shortPath(const std::string& path);
     static std::string getCommand(const std::string& command);
