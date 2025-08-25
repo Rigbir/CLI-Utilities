@@ -28,6 +28,9 @@ A set of command-line tools for `macOS` that helps monitor system state and perf
      - **CPU Usage:** User, System, Idle %
      - **RAM Usage:** Free, Active, Inactive, Wired, Total MB/%
      - **Disk Usage:** Used, Available, Total GB/%
+   - **Process Table**
+     - Table of top CPU and RAM utilization processes
+     - The ability to complete the selected process (kill)
 
 6. **Wi-Fi Monitoring**
     - Lists all known networks
