@@ -15,8 +15,6 @@
 #include <sys/statvfs.h>
 #include <sys/mount.h>
 #include <csignal>
-#include <cstdlib>
-#include <sys/stat.h>
 
 double SystemInfo::bytesToMb(const double bytes) {
     return bytes / (1024.0 * 1024.0);
@@ -249,16 +247,16 @@ std::vector<std::string> SystemInfo::getRAMUsage() {
     unsigned long pageSize;
     host_page_size(mach_host_self(), &pageSize);
 
-    const double free =     static_cast<double>(vmStats.free_count)     * pageSize;
-    const double active =   static_cast<double>(vmStats.active_count)   * pageSize;
-    const double inactive = static_cast<double>(vmStats.inactive_count) * pageSize;
-    const double wired =    static_cast<double>(vmStats.wire_count)     * pageSize;
+    const double free =     static_cast<double>(vmStats.free_count)     * static_cast<double>(pageSize);
+    const double active =   static_cast<double>(vmStats.active_count)   * static_cast<double>(pageSize);;
+    const double inactive = static_cast<double>(vmStats.inactive_count) * static_cast<double>(pageSize);;
+    const double wired =    static_cast<double>(vmStats.wire_count)     * static_cast<double>(pageSize);;
     const double totalUsed = free + active + inactive + wired;
 
     uint64_t totalPhys = 0;
     size_t len = sizeof(totalPhys);
     sysctlbyname("hw.memsize", &totalPhys, &len, nullptr, 0);
-    const double totalInMac = static_cast<double>(totalPhys);
+    const auto totalInMac = static_cast<double>(totalPhys);
 
     return {
         "RAM Usage:",
@@ -274,13 +272,13 @@ std::vector<std::string> SystemInfo::getRAMUsage() {
 }
 
 std::vector<std::string> SystemInfo::getDiskUsage() {
-    struct statvfs stats;
     struct statfs statsDisk;
+    struct statvfs stats;
 
     if (statvfs("/", &stats) == 0 && statfs("/", &statsDisk) == 0) {
         const double totalInMac =       static_cast<double>(statsDisk.f_blocks) * statsDisk.f_bsize;
-        const double totalBytes =       static_cast<double>(stats.f_blocks) * stats.f_frsize;
-        const double availableBytes =   static_cast<double>(stats.f_bavail) * stats.f_frsize;
+        const double totalBytes =       static_cast<double>(stats.f_blocks)     * static_cast<double>(stats.f_frsize);
+        const double availableBytes =   static_cast<double>(stats.f_bavail)     * static_cast<double>(stats.f_frsize);
         const double usedBytes =        totalBytes - availableBytes;
 
         const double totalPercent = totalBytes > 0 ? (bytesToGb(totalBytes) / bytesToGB(totalInMac)) * 100.0 : 0.0;
