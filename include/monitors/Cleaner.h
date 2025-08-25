@@ -18,5 +18,6 @@ private:
     std::map<std::string, std::map<std::string, std::string>> removeEntries;
     [[nodiscard]] static std::string getFolder();
     [[nodiscard]] static std::string resolveFolderPath(const std::string& key);
+    static bool confirmation(const std::string& text);
     void printFileInFolder(const std::string& folder);
 };

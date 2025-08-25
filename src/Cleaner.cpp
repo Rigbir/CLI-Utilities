@@ -66,16 +66,16 @@ void Cleaner::printFileInFolder(const std::string& folder) {
     }
 }
 
-std::string formatTime(time_t t) {
+std::string formatTime(const time_t t) {
     char buf[64];
     strftime(buf, sizeof(buf), "%a %b %d %H:%M:%S %Y", localtime(&t));
     return std::string(buf);
 }
 
-bool confirmation() {
+bool Cleaner::confirmation(const std::string& text) {
     char confirm;
     while (true) {
-        std::cout << '\n' << colorText(BRed, centered("Are you sure? [y/n]: ", termWidth()));
+        std::cout << '\n' << colorText(BRed, centered(text, termWidth()));
         std::cin >> confirm;
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -139,7 +139,7 @@ void Cleaner::getAllInfo() {
     for (const auto& folder : folders) {
         entries.clear();
         DIR* dir = opendir(folder.c_str());
-        std::cout << colorText(BRed, "\nDirectory: " + folder) << "\n\n" << std::string(70, '-') << '\n';
+        std::cout << colorText(BRed, "\nDirectory: " + folder) << "\n\n" << std::string(termWidth(), '-') << '\n';
 
         if (!dir) {
             std::cout << colorText(BRed, "\nNo such file or directory") << '\n';
@@ -165,8 +165,10 @@ void Cleaner::getAllInfo() {
                       << std::string(70 - filename.size(), ' ')
                       << stats << '\n';
         }
-        std::cout << std::string(70, '-') << '\n';
+        std::cout << std::string(termWidth(), '-') << '\n';
     }
+
+    removeFile();
 }
 
 std::string Cleaner::getStats(const std::string& path) const {
@@ -190,6 +192,8 @@ std::string Cleaner::getStats(const std::string& path) const {
 }
 
 void Cleaner::removeFile() {
+    if (!confirmation("Do you want to delete a directory? [y/n]: ")) return;
+
     const std::string folder = getFolder();
     const std::string workFolder = resolveFolderPath(folder);
 
@@ -238,10 +242,10 @@ void Cleaner::removeFile() {
             continue;
         } else if (matches.size() == 1) {
             std::cout << '\n' << colorText(BWhite, centered(("Find file: " + matches[0]), termWidth())) << '\n';
-            if (confirmation()) {
+            if (confirmation("Are you sure? [y/n]: ")) {
                 std::filesystem::is_directory(workFolder)
-                ? std::filesystem::remove_all((workFolder + matches[0]).c_str())
-                : std::filesystem::remove((workFolder + matches[0]).c_str());
+                    ? std::filesystem::remove_all((workFolder + matches[0]).c_str())
+                    : std::filesystem::remove((workFolder + matches[0]).c_str());
 
                 removeEntries.erase(matches[0]);
                 std::cout << '\n' << colorText(BYellow, centered("File was deleted.\n", termWidth()));
