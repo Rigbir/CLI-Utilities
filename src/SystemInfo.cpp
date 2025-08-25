@@ -14,6 +14,9 @@
 #include <sys/sysctl.h>
 #include <sys/statvfs.h>
 #include <sys/mount.h>
+#include <csignal>
+#include <cstdlib>
+#include <sys/stat.h>
 
 double SystemInfo::bytesToMb(const double bytes) {
     return bytes / (1024.0 * 1024.0);
@@ -140,11 +143,28 @@ void SystemInfo::runProcessMonitoring() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     std::atomic<bool> stopFlag = false;
-    std::thread inputThread([&stopFlag]() {
+    std::thread inputThread([&stopFlag, this]() {
         std::string line;
         while (!stopFlag) {
             std::getline(std::cin, line);
-            if (line == "q" || line == "quit") stopFlag = true;
+            if (line == "q" || line == "quit") {
+                stopFlag = true;
+            } else {
+                try {
+                    const int numberProcess = std::stoi(line);
+                    if (numberProcess >= 0 && numberProcess <= static_cast<int>(this->idProcess.size())) {
+                        if (kill(this->idProcess[numberProcess], SIGTERM) == 0) {
+                            std::cout << '\n' << colorText(BWhite, centered("Process killed", termWidth()));
+                        } else {
+                            std::cout << '\n' << colorText(BWhite, centered("Killed failed", termWidth()));
+                        }
+                    } else {
+                        std::cout << '\n' << colorText(BRed, centered("Invalid input process number!", termWidth()));
+                    }
+                } catch (...) {
+                    std::cout << '\n' << colorText(BRed, centered("Wrong input!", termWidth()));
+                }
+            }
         }
     });
 
@@ -152,13 +172,14 @@ void SystemInfo::runProcessMonitoring() {
         clearScreen();
         for (size_t i = 0; i < 9; ++i) std::cout << '\n';
         std::cout << colorText(BWhite, centered("Product Name: "     + productName +
-                                                       "   Product Version: " + productVersion, termWidth())) << "\n\n";
+                                                        "   Product Version: "  + productVersion, termWidth())) << "\n\n";
 
         topByCpuRam();
-        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
+
+        std::cout << "\n\n" << colorText(BWhite, centered("Input process number to kill or 'q' to quit:", termWidth())) << '\n';
         std::cout << std::flush;
 
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(4));
     }
 
     inputThread.join();
@@ -280,9 +301,9 @@ std::vector<std::string> SystemInfo::getDiskUsage() {
 }
 
 void SystemInfo::topByCpuRam() {
-    const std::string command = "ps axo pcpu,pmem,comm | sort -k 1 -nr | head -n " + std::to_string(limits);
-    const std::string output = getCommand(command);
+    const std::string command = R"(ps axo pid,pcpu,pmem,comm | grep -vE 'ps|sort|head|Helper|Renderer|Backend|gitstatusd' | sort -k 2 -nr | head -n)" + std::to_string(limits);
 
+    const std::string output = getCommand(command);
     if (output.empty()) {
         std::cout << '\n' << colorText(BRed, "Error executing command or empty result.");
         return;
@@ -297,11 +318,13 @@ void SystemInfo::topByCpuRam() {
     int i = 1;
     while (std::getline(outputStream, line)) {
         std::istringstream iss(line);
-        std::string cpuStr, ramStr, comName;
+        std::string idStr, cpuStr, ramStr, comName;
 
-        if (iss >> cpuStr >> ramStr) {
+        if (iss >> idStr >> cpuStr >> ramStr) {
             std::getline(iss, comName);
             if (!comName.empty() && comName[0] == ' ') comName.erase(0, 1);
+
+            this->idProcess[i] = std::stoi(idStr);
 
             outputTable.push_back({
                 std::to_string(i),
