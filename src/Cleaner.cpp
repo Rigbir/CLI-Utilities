@@ -5,13 +5,13 @@
 #include "Cleaner.h"
 #include <iostream>
 #include <map>
-#include <iomanip>
 #include <sstream>
 #include <filesystem>
 #include <algorithm>
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <numeric>
 
 std::string Cleaner::getFolder() {
     std::string inputFolder;
@@ -94,8 +94,8 @@ void Cleaner::execute(const std::vector<std::string>& args) {
         "Cleaner Utility",
         "",
         "Commands:",
-        "  1  - Show all info",
-        "  2  - Remove files from directory",
+        "  1  - Cache Info & Management (view and delete cache files)",
+        "  2  - Large Directory Scan (view size, optionally remove files)",
         "",
         "Navigation:",
         "  q, quit - go back to main menu"
@@ -112,7 +112,7 @@ void Cleaner::execute(const std::vector<std::string>& args) {
         try {
             switch (std::stoi(input)) {
                 case 1: getAllInfo(); break;
-                case 2: removeFile(); break;
+                case 2: largeDirectory(); break;
                 default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
             }
         } catch (const std::invalid_argument&) {
@@ -258,4 +258,92 @@ void Cleaner::removeFile() {
             }
             std::cout << '\n' << colorText(BWhite, centered("Please enter more specific name.\n", termWidth()));        }
     }
+}
+
+double bytesToGb(const long long bytes) {
+    return bytes / (1024.0 * 1024.0 * 1024.0);
+}
+
+std::string roundGb(const double size) {
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << size;
+    return ss.str();
+}
+
+void Cleaner::largeDirectory() {
+    std::cout << '\n' << colorText(BYellow, centered("Please wait, calculating sizes...", termWidth())) << std::endl;
+
+    const char* homeDir = getenv("HOME");
+    if (!homeDir) {
+        std::cerr << colorText(BRed, "Couldn't identify the home directory.") << '\n';
+        return;
+    }
+
+    std::map<fs::path, long long> dirSizes;
+    for (const auto& entry : fs::recursive_directory_iterator(homeDir,
+                                                               fs::directory_options::skip_permission_denied)) {
+        try {
+            if (entry.is_regular_file()) {
+                dirSizes[entry.path()] = entry.file_size();
+            }
+        } catch (...) {}
+    }
+
+    std::map<fs::path, long long> totalSizes;
+    for (const auto& [path, size] : dirSizes) {
+        fs::path p = path.parent_path();
+        while (!p.empty() && p.string().find(homeDir) == 0) {
+            totalSizes[p] += size;
+            p = p.parent_path();
+        }
+    }
+
+    std::vector<std::vector<std::string>> outputDate;
+    outputDate.push_back({"№", "Directory", "Size (Gb)"});
+
+    for (const auto& [dir, size] : totalSizes) {
+        double sizeGb = bytesToGb(size);
+        if (sizeGb >= 5.0) {
+            outputDate.push_back({
+                std::to_string(0),
+                shortPath(dir.string()),
+                roundGb(sizeGb)
+            });
+        }
+    }
+
+    std::sort(outputDate.begin() + 1, outputDate.end(), [](const std::vector<std::string>& a,
+                                                                          const std::vector<std::string>& b) {
+        const double sizeA = std::stod(a[2]);
+        const double sizeB = std::stod(b[2]);
+        return sizeA > sizeB;
+    });
+
+    for (size_t i = 1; i < outputDate.size(); ++i) {
+        outputDate[i][0] = std::to_string(i);
+    }
+
+    std::cout << '\n';
+    printProcessTable(outputDate);
+}
+
+std::string Cleaner::shortPath(const std::string& path) {
+    if (path.empty()) return "";
+
+    std::vector<std::string> segments;
+    std::stringstream ss(path);
+    std::string item;
+    while (std::getline(ss, item, '/')) {
+        if (!item.empty()) segments.push_back(item);
+    }
+
+    if (segments.size() <= 4) {
+        return std::accumulate(segments.begin(), segments.end(), std::string(),
+                               [](const std::string& a, const std::string& b){ return a + "/" + b; });
+    }
+
+    std::string startPart = "/" + segments[0] + "/" + segments[1] + "/" + segments[2];
+    std::string endPart = segments[segments.size()-2] + "/" + segments[segments.size()-1];
+
+    return startPart + "/.../" + endPart;
 }
