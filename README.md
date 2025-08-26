@@ -11,8 +11,9 @@ A set of command-line tools for `macOS` that helps monitor system state and perf
     - Estimates Time to full charge or discharge
 
 2. **Junk Cleaner**
-    - Scans `~/Library/Caches`, `Xcode temporary folders`, `Safari caches`
-    - Suggests removing unnecessary files to free up disk space
+   - Scans `~/Library/Caches`, `Xcode temporary folders`, `Safari caches`
+   - Provides large directory scan to identify space-heavy folders
+   - Allows viewing and optionally deleting files to free up disk space
 
 3. **Code Counter**
     - Analyzes project files across `C++, Python, Java, JavaScript, and more`
