@@ -16,7 +16,6 @@
 std::string Cleaner::getFolder() {
     std::string inputFolder;
     std::cout << '\n' << colorText(BWhite, centered("Write Folder [cache, xCode, safari]: ", termWidth()));
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::getline(std::cin, inputFolder);
     return toLower(inputFolder);
 }
@@ -35,7 +34,7 @@ std::string Cleaner::resolveFolderPath(const std::string& key) {
 
 void Cleaner::printFileInFolder(const std::string& folder) {
     DIR* dir = opendir(folder.c_str());
-    std::cout << colorText(BRed, "\nDirectory: " + folder) << "\n\n" << std::string(70, '-') << '\n';
+    std::cout << colorText(BRed, "\nDirectory: " + folder) << "\n\n" << std::string(termWidth(), '-') << '\n';
 
     if (!dir) {
         std::cerr << colorText(BRed, "Cannot open directory: " + folder) << '\n';
@@ -194,12 +193,13 @@ std::string Cleaner::getStats(const std::string& path) const {
 void Cleaner::removeFile() {
     if (!confirmation("Do you want to delete a directory? [y/n]: ")) return;
 
-    const std::string folder = getFolder();
-    const std::string workFolder = resolveFolderPath(folder);
+    std::string folder = getFolder();
+    std::string workFolder = resolveFolderPath(folder);
 
-    if (workFolder.empty()) {
+    while (workFolder.empty()) {
         std::cerr << '\n' << colorText(BRed, centered(("Unknown folder key: " + folder), termWidth())) << '\n';
-        return;
+        folder = getFolder();
+        workFolder = resolveFolderPath(folder);
     }
 
     printFileInFolder(workFolder);
