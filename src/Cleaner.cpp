@@ -271,6 +271,10 @@ std::string roundGb(const double size) {
 }
 
 void Cleaner::largeDirectory() {
+    double userSize;
+    std::cout << '\n' << colorText(BWhite, centered("Enter minimum directory size to display (in GB): ", termWidth()));
+    std::cin >> userSize;
+
     std::cout << '\n' << colorText(BYellow, centered("Please wait, calculating sizes...", termWidth())) << std::endl;
 
     const char* homeDir = getenv("HOME");
@@ -303,7 +307,7 @@ void Cleaner::largeDirectory() {
 
     for (const auto& [dir, size] : totalSizes) {
         double sizeGb = bytesToGb(size);
-        if (sizeGb >= 5.0) {
+        if (sizeGb >= userSize) {
             outputDate.push_back({
                 std::to_string(0),
                 shortPath(dir.string()),
