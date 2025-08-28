@@ -314,7 +314,7 @@ int getUserDelNum() {
 void Cleaner::largeDirectory() {
     const double userSize = getUserSize();
 
-    std::cout << '\n' << colorText(BYellow, centered("Please wait, calculating sizes...", termWidth())) << std::endl;
+    std::cout << '\n' << colorText(BYellow, centered("Please wait (about 1 minute), calculating sizes...", termWidth())) << std::endl;
 
     const char* homeDir = getenv("HOME");
     if (!homeDir) {
@@ -378,15 +378,27 @@ void Cleaner::largeDirectory() {
 
     if (!confirmation("Do you want to delete a directory? [y/n]: ")) return;
 
-    const int deleteNumber = getUserDelNum();
-    const fs::path pathDelDir = rows[deleteNumber].fullPath;
+    while (true) {
+        const int deleteNumber = getUserDelNum();
+        if (deleteNumber == 0) {
+            break;
+        }
 
-    if (!confirmation("Are you sure? [y/n]: ")) return;
-    try {
-        std::filesystem::remove_all(pathDelDir.c_str());
-        std::cout << '\n' << colorText(BYellow, centered("File: '" + rows[deleteNumber].shortPath + "' was deleted.\n", termWidth()));
-    } catch (const fs::filesystem_error&) {
-        std::cout << '\n' << colorText(BRed, centered("Error delete", termWidth()));
+        if (deleteNumber <= 0 || deleteNumber >= static_cast<int>(rows.size())) {
+            std::cout << '\n' << colorText(BRed, centered("Invalid number!\n", termWidth()));
+            continue;
+        }
+
+        const fs::path pathDelDir = rows[deleteNumber].fullPath;
+
+        if (!confirmation("Are you sure? [y/n]: ")) return;
+
+        try {
+            std::filesystem::remove_all(pathDelDir.c_str());
+            std::cout << '\n' << colorText(BYellow, centered("File: '" + rows[deleteNumber].shortPath + "' was deleted.\n", termWidth()));
+        } catch (const fs::filesystem_error&) {
+            std::cout << '\n' << colorText(BRed, centered("Error delete", termWidth()));
+        }
     }
 }
 
