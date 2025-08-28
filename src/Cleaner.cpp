@@ -249,7 +249,7 @@ void Cleaner::removeFile() {
                     : std::filesystem::remove((workFolder + matches[0]).c_str());
 
                 removeEntries.erase(matches[0]);
-                std::cout << '\n' << colorText(BYellow, centered("File was deleted.\n", termWidth()));
+                std::cout << '\n' << colorText(BGreen, centered("File was deleted.\n", termWidth()));
             }
             break;
         } else {
@@ -395,7 +395,7 @@ void Cleaner::largeDirectory() {
 
         try {
             std::filesystem::remove_all(pathDelDir.c_str());
-            std::cout << '\n' << colorText(BYellow, centered("File: '" + rows[deleteNumber].shortPath + "' was deleted.\n", termWidth()));
+            std::cout << '\n' << colorText(BGreen, centered("File: '" + rows[deleteNumber].shortPath + "' was deleted.\n", termWidth()));
         } catch (const fs::filesystem_error&) {
             std::cout << '\n' << colorText(BRed, centered("Error delete", termWidth()));
         }
