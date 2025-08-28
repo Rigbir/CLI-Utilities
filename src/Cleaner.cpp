@@ -81,7 +81,7 @@ bool Cleaner::confirmation(const std::string& text) {
         if (confirm == 'y' || confirm == 'Y') return true;
         if (confirm == 'n' || confirm == 'N') return false;
 
-        std::cout << colorText(BYellow, "Invalid input. Please enter 'y' or 'n'.\n");
+        std::cout << '\n' << colorText(BYellow, centered("Invalid input. Please enter 'y' or 'n'.", termWidth())) << '\n';
     }
 }
 
@@ -106,6 +106,7 @@ void Cleaner::execute(const std::vector<std::string>& args) {
     while (true) {
         std::cout << "\n\n" << colorText(BWhite, centered("Enter command: ", termWidth()));
         std::cin >> input;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         if (input == "q" || input == "quit") return;
 
@@ -270,10 +271,48 @@ std::string roundGb(const double size) {
     return ss.str();
 }
 
+double getUserSize() {
+    std::string input;
+    double value = 0.0;
+
+    while (true) {
+        std::cout << '\n' << colorText(BWhite, centered("Enter minimum directory size to display (in GB): ", termWidth()));
+
+        std::getline(std::cin, input);
+        std::stringstream ss(input);
+
+        if ((ss >> value) && ss.eof()) {
+            return value;
+        }
+
+        std::cout << '\n' << colorText(BRed, centered("Please enter a number!\n", termWidth()));
+    }
+}
+
+int getUserDelNum() {
+    std::string input;
+    int userNumber = 0;
+
+    while (true) {
+        std::cout << '\n' << colorText(BWhite, centered("Enter the number of the directory to delete or 'q/quit' to exit: ", termWidth()));
+
+        std::getline(std::cin, input);
+        std::stringstream ss(input);
+
+        if (input == "quit" || input == "q") {
+            return 0;
+        }
+
+        if ((ss >> userNumber) && ss.eof()) {
+            return userNumber;
+        }
+
+        std::cout << '\n' << colorText(BRed, centered("Please enter a number!\n", termWidth()));
+    }
+}
+
 void Cleaner::largeDirectory() {
-    double userSize;
-    std::cout << '\n' << colorText(BWhite, centered("Enter minimum directory size to display (in GB): ", termWidth()));
-    std::cin >> userSize;
+    const double userSize = getUserSize();
 
     std::cout << '\n' << colorText(BYellow, centered("Please wait, calculating sizes...", termWidth())) << std::endl;
 
@@ -284,13 +323,17 @@ void Cleaner::largeDirectory() {
     }
 
     std::map<fs::path, long long> dirSizes;
-    for (const auto& entry : fs::recursive_directory_iterator(homeDir,
-                                                               fs::directory_options::skip_permission_denied)) {
+    for (fs::recursive_directory_iterator it(homeDir, fs::directory_options::skip_permission_denied), end;
+         it != end; ) {
         try {
-            if (entry.is_regular_file()) {
-                dirSizes[entry.path()] = entry.file_size();
+            if (it->is_regular_file()) {
+                dirSizes[it->path()] = it->file_size();
             }
-        } catch (...) {}
+            ++it;
+        } catch(const fs::filesystem_error&) {
+            it.disable_recursion_pending();
+            ++it;
+        }
     }
 
     std::map<fs::path, long long> totalSizes;
@@ -302,33 +345,49 @@ void Cleaner::largeDirectory() {
         }
     }
 
-    std::vector<std::vector<std::string>> outputDate;
-    outputDate.push_back({"№", "Directory", "Size (Gb)"});
+    std::vector<Row> rows;
+    rows.push_back({"№", "Directory", "Size (Gb)", ""});
 
     for (const auto& [dir, size] : totalSizes) {
         double sizeGb = bytesToGb(size);
         if (sizeGb >= userSize) {
-            outputDate.push_back({
-                std::to_string(0),
+            rows.push_back({
+                "0",
                 shortPath(dir.string()),
-                roundGb(sizeGb)
+                roundGb(sizeGb),
+                dir
             });
         }
     }
 
-    std::sort(outputDate.begin() + 1, outputDate.end(), [](const std::vector<std::string>& a,
-                                                                          const std::vector<std::string>& b) {
-        const double sizeA = std::stod(a[2]);
-        const double sizeB = std::stod(b[2]);
-        return sizeA > sizeB;
+    std::sort(rows.begin() + 1, rows.end(), [](const Row& a, const Row& b) {
+        return std::stod(a.sizeDir) > std::stod(b.sizeDir);
     });
 
-    for (size_t i = 1; i < outputDate.size(); ++i) {
-        outputDate[i][0] = std::to_string(i);
+    for (size_t i = 1; i < rows.size(); ++i) {
+        rows[i].index = std::to_string(i);
+    }
+
+    std::vector<std::vector<std::string>> outputDate;
+    for (const auto& r : rows) {
+        outputDate.push_back({r.index, r.shortPath, r.sizeDir});
     }
 
     std::cout << '\n';
     printProcessTable(outputDate);
+
+    if (!confirmation("Do you want to delete a directory? [y/n]: ")) return;
+
+    const int deleteNumber = getUserDelNum();
+    const fs::path pathDelDir = rows[deleteNumber].fullPath;
+
+    if (!confirmation("Are you sure? [y/n]: ")) return;
+    try {
+        std::filesystem::remove_all(pathDelDir.c_str());
+        std::cout << '\n' << colorText(BYellow, centered("File: '" + rows[deleteNumber].shortPath + "' was deleted.\n", termWidth()));
+    } catch (const fs::filesystem_error&) {
+        std::cout << '\n' << colorText(BRed, centered("Error delete", termWidth()));
+    }
 }
 
 std::string Cleaner::shortPath(const std::string& path) {

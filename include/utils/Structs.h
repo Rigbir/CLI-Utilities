@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -14,4 +15,11 @@ struct FileStats {
 struct LangConfig {
     std::vector<std::string> extension;
     std::string name;
+};
+
+struct Row {
+    std::string index;
+    std::string shortPath;
+    std::string sizeDir;
+    std::filesystem::path fullPath;
 };
