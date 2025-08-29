@@ -11,6 +11,7 @@
 #include <valarray>
 #include <algorithm>
 #include <filesystem>
+#include <termios.h>
 
 namespace fs = std::filesystem;
 
@@ -34,6 +35,22 @@ inline std::string toLower(std::string s) {
     std::ranges::transform(s, s.begin(),
                            [](const unsigned char c){ return static_cast<char>(std::tolower(c)); });
     return s;
+}
+
+inline char getCharNonBlocking() {
+    termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    char c = 0;
+    int bytesAvailable;
+    ioctl(STDIN_FILENO, FIONREAD, &bytesAvailable);
+    if (bytesAvailable > 0) read(STDIN_FILENO, &c, 1);
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    return c;
 }
 
 inline size_t utf8VisibleLenNoANSI(const std::string_view& s) {

@@ -21,19 +21,12 @@ void BatteryMonitor::staticStatus() const {
 
 void BatteryMonitor::runLiveMonitor() const {
     std::atomic<bool> stopFlag = false;
-    std::thread inputThread([&stopFlag]() {
-        std::string line;
-        while (!stopFlag) {
-            std::getline(std::cin, line);
-            if (line == "q" || line == "quit") stopFlag = true;
-        }
-    });
-
     while (!stopFlag) {
         animatedStatus();
-    }
 
-    inputThread.join();
+        char c = getCharNonBlocking();
+        if (c == 'q') stopFlag = true;
+    }
 }
 
 void BatteryMonitor::execute(const std::vector<std::string>& args) {
@@ -352,8 +345,8 @@ void BatteryMonitor::printStatus(const bool animated) const {
 
     if (animated) {
         std::cout << '\n';
-        for (int i = 0; i < termWidth() / 2.5; ++i) std::cout << " ";
-        std::cout << colorText(BWhite, "Press 'q' + Enter to go back.\n");
+        for (int i = 0; i < termWidth() / 2.4; ++i) std::cout << " ";
+        std::cout << colorText(BWhite, "Press 'q' to go back.\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
     }
 
