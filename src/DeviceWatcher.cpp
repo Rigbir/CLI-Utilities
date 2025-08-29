@@ -177,24 +177,18 @@ void DeviceWatcher::runLiveMonitoring(const std::string& title,
 
     std::atomic<bool> stopFlag = false;
 
-    std::thread inputThread([&stopFlag]() {
-        std::string line;
-        while (!stopFlag) {
-            std::getline(std::cin, line);
-            if (line == "q" || line == "quit") stopFlag = true;
-        }
-    });
-
     setupNotifications();
 
-    std::cout << colorText(BWhite, "\n[*] " + title + " (press 'q' + Enter to exit)...\n");
+    std::cout << colorText(BWhite, "\n[*] " + title + " (press 'q' to exit)...\n");
 
     while (!stopFlag) {
         CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.5, true);
+
+        char c = getCharNonBlocking();
+        if (c == 'q') stopFlag = true;
     }
 
     CFRunLoopStop(CFRunLoopGetCurrent());
-    inputThread.join();
 }
 
 void DeviceWatcher::execute(const std::vector<std::string> &args) {
