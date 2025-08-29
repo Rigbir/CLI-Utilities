@@ -23,4 +23,6 @@ private:
                                const std::string& startMarker,
                                const std::string& endMarker,
                                const std::string& message);
+
+    static void printOutput(const std::string& result);
 };

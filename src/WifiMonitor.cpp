@@ -10,9 +10,20 @@
 #include <chrono>
 #include <atomic>
 
-void printOutput(const std::string& result) {
-    std::cout << "\033[2J\033[H";
-    std::cout << '\n' << colorText(BWhite, result + '\n');
+void WifiMonitor::printOutput(const std::string& result) {
+    clearScreen();
+    for (size_t i = 0; i < 9; ++i) std::cout << '\n';
+
+    std::string line;
+    std::stringstream ss(result);
+    std::vector<std::string> outputTable;
+
+    while (std::getline(ss, line)) {
+        line = trim(line);
+        outputTable.push_back(line);
+    }
+
+    printBox(outputTable);
 }
 
 std::string WifiMonitor::trim(const std::string& s) {
@@ -98,16 +109,18 @@ std::string WifiMonitor::runCommandSystem(const std::string& cmd,
 void WifiMonitor::runLiveMonitor(const std::string& command,
                                  const std::string& startMarker,
                                  const std::string& endMarker,
-                                 const std::string& message = "Press 'q' to go back.\n") {
+                                 const std::string& message = "Press 'q' to go back: ") {
 
     std::atomic<bool> stopFlag = false;
 
     while (!stopFlag) {
         printOutput(runCommandSystem(command, startMarker, endMarker));
-        std::cout << colorText(BWhite, message);
+        std::cout << '\n' << colorText(BWhite, centered(message, termWidth()));
 
         char c = getCharNonBlocking();
         if (c == 'q') stopFlag = true;
+
+        std::cout << std::flush;
     }
 }
 
