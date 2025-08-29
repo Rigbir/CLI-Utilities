@@ -98,23 +98,17 @@ std::string WifiMonitor::runCommandSystem(const std::string& cmd,
 void WifiMonitor::runLiveMonitor(const std::string& command,
                                  const std::string& startMarker,
                                  const std::string& endMarker,
-                                 const std::string& message = "Press 'q' + Enter to go back.\n") {
+                                 const std::string& message = "Press 'q' to go back.\n") {
 
     std::atomic<bool> stopFlag = false;
-    std::thread inputThread([&stopFlag]() {
-        std::string line;
-        while (!stopFlag) {
-            std::getline(std::cin, line);
-            if (line == "q" || line == "quit") stopFlag = true;
-        }
-    });
 
     while (!stopFlag) {
         printOutput(runCommandSystem(command, startMarker, endMarker));
         std::cout << colorText(BWhite, message);
-    }
 
-    inputThread.join();
+        char c = getCharNonBlocking();
+        if (c == 'q') stopFlag = true;
+    }
 }
 
 void WifiMonitor::execute(const std::vector<std::string>& args) {

@@ -103,13 +103,6 @@ void SystemInfo::execute(const std::vector<std::string>& args) {
 
 void SystemInfo::runLiveMonitoring() {
     std::atomic<bool> stopFlag = false;
-    std::thread inputThread([&stopFlag]() {
-        std::string line;
-        while (!stopFlag) {
-            std::getline(std::cin, line);
-            if (line == "q" || line == "quit") stopFlag = true;
-        }
-    });
 
     while (!stopFlag) {
         clearScreen();
@@ -122,13 +115,14 @@ void SystemInfo::runLiveMonitoring() {
         auto diskTable = getDiskUsage();
         printBoxes({cpuTable, ramTable, diskTable});
 
-        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' + Enter to go back.", termWidth())) << '\n';
+        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' to go back.", termWidth())) << '\n';
         std::cout << std::flush;
+
+        char c = getCharNonBlocking();
+        if (c == 'q') stopFlag = true;
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-
-    inputThread.join();
 }
 
 void SystemInfo::runProcessMonitoring() {
@@ -144,23 +138,27 @@ void SystemInfo::runProcessMonitoring() {
     std::thread inputThread([&stopFlag, this]() {
         std::string line;
         while (!stopFlag) {
-            std::getline(std::cin, line);
-            if (line == "q" || line == "quit") {
-                stopFlag = true;
-            } else {
-                try {
-                    const int numberProcess = std::stoi(line);
-                    if (numberProcess >= 0 && numberProcess <= static_cast<int>(this->idProcess.size())) {
-                        if (kill(this->idProcess[numberProcess], SIGTERM) == 0) {
-                            std::cout << '\n' << colorText(BWhite, centered("Process killed", termWidth()));
+            char c = getCharNonBlocking();
+            if (c != 0) {
+                if (c == '\n') {
+                    try {
+                        const int numberProcess = std::stoi(line);
+                        if (numberProcess >= 0 && numberProcess <= static_cast<int>(this->idProcess.size())) {
+                            if (kill(this->idProcess[numberProcess], SIGTERM) == 0) {
+                                std::cout << '\n' << colorText(BWhite, centered("Process killed", termWidth()));
+                            } else {
+                                std::cout << '\n' << colorText(BWhite, centered("Killed failed", termWidth()));
+                            }
                         } else {
-                            std::cout << '\n' << colorText(BWhite, centered("Killed failed", termWidth()));
+                            std::cout << '\n' << colorText(BRed, centered("Invalid input process number!", termWidth()));
                         }
-                    } else {
-                        std::cout << '\n' << colorText(BRed, centered("Invalid input process number!", termWidth()));
+                    } catch (...) {
+                        std::cout << '\n' << colorText(BRed, centered("Wrong input!", termWidth()));
                     }
-                } catch (...) {
-                    std::cout << '\n' << colorText(BRed, centered("Wrong input!", termWidth()));
+                } else if (c == 'q') {
+                    stopFlag = true;
+                } else {
+                    line += c;
                 }
             }
         }
@@ -177,7 +175,10 @@ void SystemInfo::runProcessMonitoring() {
         std::cout << "\n\n" << colorText(BWhite, centered("Input process number to kill or 'q' to quit:", termWidth())) << '\n';
         std::cout << std::flush;
 
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        char c = getCharNonBlocking();
+        if (c == 'q') stopFlag = true;
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     inputThread.join();
