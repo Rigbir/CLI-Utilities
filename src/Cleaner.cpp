@@ -401,24 +401,3 @@ void Cleaner::largeDirectory() {
         }
     }
 }
-
-std::string Cleaner::shortPath(const std::string& path) {
-    if (path.empty()) return "";
-
-    std::vector<std::string> segments;
-    std::stringstream ss(path);
-    std::string item;
-    while (std::getline(ss, item, '/')) {
-        if (!item.empty()) segments.push_back(item);
-    }
-
-    if (segments.size() <= 4) {
-        return std::accumulate(segments.begin(), segments.end(), std::string(),
-                               [](const std::string& a, const std::string& b){ return a + "/" + b; });
-    }
-
-    std::string startPart = "/" + segments[0] + "/" + segments[1] + "/" + segments[2];
-    std::string endPart = segments[segments.size()-2] + "/" + segments[segments.size()-1];
-
-    return startPart + "/.../" + endPart;
-}

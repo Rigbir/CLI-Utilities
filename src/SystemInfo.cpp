@@ -178,7 +178,7 @@ void SystemInfo::runProcessMonitoring() {
         char c = getCharNonBlocking();
         if (c == 'q') stopFlag = true;
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     }
 
     inputThread.join();
@@ -355,35 +355,4 @@ std::string SystemInfo::getCommand(const std::string& command) {
     pclose(pipe);
 
     return result.str();
-}
-
-std::string SystemInfo::shortPath(const std::string& path) {
-    if (path.empty()) return "";
-
-    std::string startPart, endPart;
-
-    int segment = 0;
-    size_t i = 0;
-    for (; i < path.size(); ++i) {
-        startPart += path[i];
-        if (path[i] == '/') ++segment;
-        if (segment == 3) {
-            ++i;
-            break;
-        }
-    }
-
-    int pos = path.size();
-    for (size_t j = path.size() - 1; j > i; --j) {
-        endPart += path[j];
-        if (path[j] == '/') --segment;
-        if (segment == 2) {
-            pos = j;
-            break;
-        }
-    }
-
-    endPart = path.substr(pos);
-
-    return startPart + "..." + endPart;
 }

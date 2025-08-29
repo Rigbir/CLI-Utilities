@@ -34,6 +34,5 @@ private:
 
     int limits = 0;
     std::map<int, int> idProcess;
-    static std::string shortPath(const std::string& path);
     static std::string getCommand(const std::string& command);
 };
