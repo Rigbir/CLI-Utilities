@@ -15,9 +15,9 @@ public:
     [[nodiscard]] int getTimeRemaining() const override;
     [[nodiscard]] double getHealth() const override;
 
-    [[nodiscard]] std::pair<std::string, std::string> animatedBar(int valuePercent,
-                                                                  const std::vector<std::string> &pulseChars,
-                                                                  bool animate) const;
+    [[nodiscard]] static std::pair<std::string, std::string> animatedBar(int valuePercent,
+                                                                         const std::vector<std::string> &pulseChars,
+                                                                         bool animate);
 
     [[nodiscard]] std::pair<std::string, std::string> animatedBattery(int batteryPercent) const;
     [[nodiscard]] std::pair<std::string, std::string> animatedCycleCount(int cycleCount) const;

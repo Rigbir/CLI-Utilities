@@ -77,18 +77,24 @@ int BatteryMonitor::getIntValue(const CFStringRef key) {
     const CFArrayRef sources = IOPSCopyPowerSourcesList(blob);
 
     int value = -1;
-    if (CFArrayGetCount(sources) > 0) {
+    if (sources != nullptr && CFArrayGetCount(sources) > 0) {
         const CFDictionaryRef desc = IOPSGetPowerSourceDescription(
             blob,
             CFArrayGetValueAtIndex(sources, 0)
         );
 
-        auto num = static_cast<CFNumberRef>(CFDictionaryGetValue(desc, key));
-        if (num) CFNumberGetValue(num, kCFNumberIntType, &value);
+        if (desc != nullptr) {
+            auto num = static_cast<CFNumberRef>(CFDictionaryGetValue(desc, key));
+            if (num) CFNumberGetValue(num, kCFNumberIntType, &value);
+        }
     }
 
-    CFRelease(blob);
-    CFRelease(sources);
+    if (blob != nullptr) {
+        CFRelease(blob);
+    }
+    if (sources != nullptr) {
+        CFRelease(sources);
+    }
     return value;
 }
 
@@ -97,17 +103,24 @@ bool BatteryMonitor::isCharging() const {
     const CFArrayRef sources = IOPSCopyPowerSourcesList(blob);
 
     bool value = false;
-    if (CFArrayGetCount(sources) > 0) {
+    if (sources != nullptr && CFArrayGetCount(sources) > 0) {
         const CFDictionaryRef desc = IOPSGetPowerSourceDescription(
             blob,
             CFArrayGetValueAtIndex(sources, 0)
         );
-        auto b = static_cast<CFBooleanRef>(CFDictionaryGetValue(desc, CFSTR(kIOPSIsChargingKey)));
-        if (b) value = CFBooleanGetValue(b);
+
+        if (desc != nullptr) {
+            auto b = static_cast<CFBooleanRef>(CFDictionaryGetValue(desc, CFSTR(kIOPSIsChargingKey)));
+            if (b) value = CFBooleanGetValue(b);
+        }
     }
 
-    CFRelease(blob);
-    CFRelease(sources);
+    if (blob != nullptr) {
+        CFRelease(blob);
+    }
+    if (sources != nullptr) {
+        CFRelease(sources);
+    }
     return value;
 }
 
@@ -125,7 +138,9 @@ int BatteryMonitor::getRegistryIntValue(const CFStringRef key) const {
         CFNumberGetValue(static_cast<CFNumberRef>(val), kCFNumberIntType, &result);
     }
 
-    CFRelease(val);
+    if (val != nullptr) {
+        CFRelease(val);
+    }
     return result;
 }
 
@@ -148,11 +163,14 @@ int BatteryMonitor::getTimeRemaining() const {
     return getIntValue(key);
 }
 
-std::pair<std::string, std::string> BatteryMonitor::animatedBar(const int valuePercent,
+std::pair<std::string, std::string> BatteryMonitor::animatedBar(int valuePercent,
                                                                 const std::vector<std::string>& pulseChars = {"█"},
-                                                                const bool animate = false) const {
+                                                                const bool animate = false) {
     constexpr int width = 20;
     static int animationStep = 0;
+
+    if (valuePercent < 0) valuePercent = 0;
+    if (valuePercent > 100) valuePercent = 100;
 
     std::string color;
     if (valuePercent > 80) color = BGreen;
@@ -180,30 +198,35 @@ std::pair<std::string, std::string> BatteryMonitor::animatedBar(const int valueP
     return {color, barStr};
 }
 
-std::pair<std::string, std::string> BatteryMonitor::animatedBattery(const int batteryPercent) const {
+std::pair<std::string, std::string> BatteryMonitor::animatedBattery(int batteryPercent) const {
     const std::vector<std::string> pulseChars = {"█", "░"};
+    batteryPercent = std::clamp(batteryPercent, 0, 100);
     return isCharging() ? animatedBar(batteryPercent, pulseChars, true)
                         : animatedBar(batteryPercent);
-
 }
 
 std::pair<std::string, std::string> BatteryMonitor::animatedCycleCount(const int cycleCount) const {
     const std::vector<std::string> pulse = {"█","▓","▒","░"};
-    const int cycleCountPercent = 100 - (cycleCount / 10);
+    int cycleCountPercent = 100 - (cycleCount / 10);
+    cycleCountPercent = std::clamp(cycleCountPercent, 0, 100);
     return animatedBar(cycleCountPercent, pulse, true);
 }
 
-std::pair<std::string, std::string> BatteryMonitor::animatedHealth(const double healthPercent) const {
+std::pair<std::string, std::string> BatteryMonitor::animatedHealth(double healthPercent) const {
     const std::vector<std::string> pulse = {"█", " "};
+    healthPercent = std::clamp(static_cast<int>(healthPercent), 0, 100);
     return animatedBar(static_cast<int>(healthPercent), pulse, true);
 }
 
 std::pair<std::string, std::string> BatteryMonitor::animatedTime(const int time) const {
     static int timeToCharge = 120;
     static int timeToDischarge = 500;
-    const int timePercent = isCharging() ? time * 100 / timeToCharge
-                                         : time * 100 / timeToDischarge;
-    std::vector<std::string> colors = {
+    int timePercent = isCharging() ? time * 100 / timeToCharge
+                                   : time * 100 / timeToDischarge;
+
+    timePercent = std::clamp(timePercent, 0, 100);
+
+    const std::vector<std::string> colors = {
         std::string(BWhite) + "█",
         std::string(BRed) + "█",
         std::string(BGreen) + "█",
@@ -231,6 +254,10 @@ std::pair<std::string, std::string> BatteryMonitor::staticAnimation(const int va
     else if (value == getTimeRemaining()) {
         percent = isCharging() ? getTimeRemaining() * 100 / 120 : getTimeRemaining() * 100 / 500;
     }
+
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+
 
     std::string color;
     if (percent > 80) color = BGreen;
