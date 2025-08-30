@@ -115,13 +115,15 @@ void SystemInfo::runLiveMonitoring() {
         auto diskTable = getDiskUsage();
         printBoxes({cpuTable, ramTable, diskTable});
 
-        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' to go back.", termWidth())) << '\n';
+        std::cout << "\n\n" << colorText(BWhite, centered("Press 'q' to go back: ", termWidth()));
         std::cout << std::flush;
 
         char c = getCharNonBlocking();
         if (c == 'q') stopFlag = true;
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        for (int i = 0; i < 10 && !stopFlag; ++i) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
     }
 }
 
@@ -323,7 +325,7 @@ void SystemInfo::topByCpuRam() {
     std::vector<std::vector<std::string>> outputTable;
     outputTable.push_back({"№", "CPU %", "RAM %", "Command"});
 
-    int i = 1;
+    int index = 1;
     while (std::getline(outputStream, line)) {
         std::istringstream iss(line);
         std::string idStr, cpuStr, ramStr, comName;
@@ -334,15 +336,15 @@ void SystemInfo::topByCpuRam() {
             std::getline(iss, comName);
             if (!comName.empty() && comName[0] == ' ') comName.erase(0, 1);
 
-            this->idProcess[i] = std::stoi(idStr);
+            this->idProcess[index] = std::stoi(idStr);
 
             outputTable.push_back({
-                std::to_string(i),
+                std::to_string(index),
                 (std::ostringstream() << std::fixed << std::setprecision(1) << std::stod(cpuStr)).str(),
                 (std::ostringstream() << std::fixed << std::setprecision(1) << std::stod(ramStr)).str(),
                 shortPath(comName)
             });
-            ++i;
+            ++index;
         }
     }
 
