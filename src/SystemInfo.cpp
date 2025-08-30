@@ -93,7 +93,7 @@ void SystemInfo::execute(const std::vector<std::string>& args) {
             switch (std::stoi(input)) {
                 case 1: runLiveMonitoring(); break;
                 case 2: runProcessMonitoring(); break;
-                default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth())); continue;
+                default: std::cout << '\n' << colorText(BRed, centered("Wrong input!\n", termWidth()));
             }
         } catch (const std::invalid_argument&) {
             std::cout << '\n' << colorText(BRed, centered("Please enter a number!\n", termWidth()));
@@ -135,50 +135,59 @@ void SystemInfo::runProcessMonitoring() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     std::atomic<bool> stopFlag = false;
-    std::thread inputThread([&stopFlag, this]() {
+    std::atomic<bool> waitingForInput = false;
+
+    std::thread inputThread([&stopFlag, this, &waitingForInput]() {
         std::string line;
         while (!stopFlag) {
-            char c = getCharNonBlocking();
-            if (c != 0) {
-                if (c == '\n') {
-                    try {
-                        const int numberProcess = std::stoi(line);
-                        if (numberProcess >= 0 && numberProcess <= static_cast<int>(this->idProcess.size())) {
-                            if (kill(this->idProcess[numberProcess], SIGTERM) == 0) {
-                                std::cout << '\n' << colorText(BWhite, centered("Process killed", termWidth()));
+            if (!waitingForInput) {
+                char c = getCharNonBlocking();
+                if (c != 0) {
+                    if (c == 'q') {
+                        stopFlag = true;
+                    } else if (c == 'y' || c == 'Y') {
+                        waitingForInput = true;
+
+                        std::cout << "\n\n" << colorText(BWhite, centered("Enter number process: ", termWidth()));
+                        std::getline(std::cin, line);
+
+                        try {
+                            const int numberProcess = std::stoi(line);
+                            if (numberProcess >= 0 && numberProcess <= static_cast<int>(this->idProcess.size())) {
+                                if (kill(this->idProcess[numberProcess], SIGTERM) == 0) {
+                                    std::cout << '\n' << colorText(BGreen, centered("Process killed", termWidth()));
+                                } else {
+                                    std::cout << '\n' << colorText(BRed, centered("Killed failed", termWidth()));
+                                }
                             } else {
-                                std::cout << '\n' << colorText(BWhite, centered("Killed failed", termWidth()));
+                                std::cout << '\n' << colorText(BRed, centered("Invalid input process number!", termWidth()));
                             }
-                        } else {
-                            std::cout << '\n' << colorText(BRed, centered("Invalid input process number!", termWidth()));
+                        } catch (...) {
+                            std::cout << '\n' << colorText(BRed, centered("Wrong input!", termWidth()));
                         }
-                    } catch (...) {
-                        std::cout << '\n' << colorText(BRed, centered("Wrong input!", termWidth()));
+
+                        waitingForInput = false;
+                    } else {
+                        line += c;
                     }
-                } else if (c == 'q') {
-                    stopFlag = true;
                 } else {
-                    line += c;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 }
             }
         }
     });
 
     while (!stopFlag) {
-        clearScreen();
-        for (size_t i = 0; i < 9; ++i) std::cout << '\n';
-        std::cout << colorText(BWhite, centered("Product Name: "     + productName +
-                                                        "   Product Version: "  + productVersion, termWidth())) << "\n\n";
+        if (!waitingForInput) {
+            topByCpuRam();
 
-        topByCpuRam();
+            std::cout << "\n\n" << colorText(BWhite, centered("You want to kill the process [y/q (to quit)]: ", termWidth()));
+            std::cout << std::flush;
+        }
 
-        std::cout << "\n\n" << colorText(BWhite, centered("Input process number to kill or 'q' to quit:", termWidth())) << '\n';
-        std::cout << std::flush;
-
-        char c = getCharNonBlocking();
-        if (c == 'q') stopFlag = true;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+        for (int i = 0; i < 30 && !stopFlag; ++i) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
     }
 
     inputThread.join();
@@ -320,6 +329,8 @@ void SystemInfo::topByCpuRam() {
         std::string idStr, cpuStr, ramStr, comName;
 
         if (iss >> idStr >> cpuStr >> ramStr) {
+            if (idStr.empty() || cpuStr.empty() || ramStr.empty()) continue;
+
             std::getline(iss, comName);
             if (!comName.empty() && comName[0] == ' ') comName.erase(0, 1);
 
@@ -335,7 +346,10 @@ void SystemInfo::topByCpuRam() {
         }
     }
 
-    std::cout << '\n';
+    clearScreen();
+    for (size_t i = 0; i < 11; ++i) std::cout << '\n';
+    std::cout << colorText(BWhite, centered("Product Name: "     + productName +
+                                                    "   Product Version: "  + productVersion, termWidth())) << "\n\n";
     printProcessTable(outputTable);
 }
 
