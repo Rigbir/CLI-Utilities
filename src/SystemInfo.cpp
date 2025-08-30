@@ -131,7 +131,7 @@ void SystemInfo::runProcessMonitoring() {
     std::cout << '\n' << colorText(BWhite, centered("Enter count of process: ", termWidth()));
     std::cin >> limits;
     if (limits <= 0) {
-        std::cout << colorText(BRed, "Invalid process count!\n");
+        std::cout << '\n' << colorText(BRed, centered("Invalid process count!", termWidth()));
         return;
     }
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
