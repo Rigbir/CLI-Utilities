@@ -85,8 +85,7 @@ bool Cleaner::confirmation(const std::string& text) {
     }
 }
 
-void Cleaner::execute(const std::vector<std::string>& args) {
-    (void) args;
+void Cleaner::execute([[maybe_unused]] const std::vector<std::string>& args) {
     clearScreen();
     for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 

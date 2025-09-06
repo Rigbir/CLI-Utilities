@@ -29,8 +29,7 @@ void BatteryMonitor::runLiveMonitor() const {
     }
 }
 
-void BatteryMonitor::execute(const std::vector<std::string>& args) {
-    (void) args;
+void BatteryMonitor::execute([[maybe_unused]] const std::vector<std::string>& args) {
     clearScreen();
     for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 

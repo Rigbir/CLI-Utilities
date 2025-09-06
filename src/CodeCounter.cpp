@@ -74,8 +74,7 @@ bool CodeCounter::isIgnorePath(const fs::path& path) {
     return false;
 }
 
-void CodeCounter::execute(const std::vector<std::string>& args) {
-    (void) args;
+void CodeCounter::execute([[maybe_unused]] const std::vector<std::string>& args) {
     clearScreen();
     for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 

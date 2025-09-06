@@ -191,8 +191,7 @@ void DeviceWatcher::runLiveMonitoring(const std::string& title,
     CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
-void DeviceWatcher::execute(const std::vector<std::string> &args) {
-    (void) args;
+void DeviceWatcher::execute([[maybe_unused]] const std::vector<std::string> &args) {
     clearScreen();
     for (size_t i = 0; i < 9; ++i) std::cout << '\n';
 
